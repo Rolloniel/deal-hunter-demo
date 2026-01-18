@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Package, TrendingDown, RefreshCw, Loader2 } from "lucide-react"
+import { SimulateButton } from "./SimulateButton"
 
 interface TrackedItem {
   id: string
@@ -90,10 +91,14 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-400">
               {items.length} {items.length === 1 ? "item" : "items"}
             </span>
+            <SimulateButton
+              onSimulate={fetchItems}
+              disabled={items.length === 0}
+            />
             <Button
               variant="ghost"
               size="icon"
