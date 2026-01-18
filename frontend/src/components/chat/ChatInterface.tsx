@@ -20,7 +20,11 @@ const EXAMPLE_PROMPTS = [
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  onMessageComplete?: () => void
+}
+
+export function ChatInterface({ onMessageComplete }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -113,6 +117,7 @@ export function ChatInterface() {
           }
         }
       }
+    onMessageComplete?.()
     } catch (error) {
       console.error("Chat error:", error)
       setMessages((prev) =>

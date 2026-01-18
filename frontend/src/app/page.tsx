@@ -1,5 +1,9 @@
+"use client"
+
+import { useState } from "react"
 import { Header } from "@/components/layout/Header"
 import { ChatInterface } from "@/components/chat/ChatInterface"
+import { TrackedItems } from "@/components/dashboard/TrackedItems"
 import {
   Card,
   CardContent,
@@ -7,9 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { MessageSquare, Package, Bell } from "lucide-react"
+import { MessageSquare, Bell } from "lucide-react"
 
 export default function Home() {
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleChatComplete = () => {
+    // Trigger refresh of tracked items after chat interaction
+    setRefreshKey((prev) => prev + 1)
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
       {/* Ambient background effects */}
@@ -39,48 +50,14 @@ export default function Home() {
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col p-0">
-              <ChatInterface />
+              <ChatInterface onMessageComplete={handleChatComplete} />
             </CardContent>
           </Card>
 
           {/* Dashboard Section */}
           <div className="flex flex-col gap-6">
-            {/* Tracked Items Card */}
-            <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
-                      <Package className="size-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white">
-                        Tracked Items
-                      </CardTitle>
-                      <CardDescription>
-                        Products you&apos;re monitoring
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-400">
-                    0 items
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-12 text-center">
-                  <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-zinc-800/50">
-                    <Package className="size-6 text-zinc-600" />
-                  </div>
-                  <p className="text-sm font-medium text-zinc-400">
-                    No items tracked yet
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-600">
-                    Start by pasting a product URL in the chat
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Tracked Items Card - Dynamic */}
+            <TrackedItems refreshKey={refreshKey} />
 
             {/* Price Alerts Card */}
             <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
