@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, TrendingDown, RefreshCw, Loader2 } from "lucide-react"
+import { Package, TrendingDown, RefreshCw, WifiOff } from "lucide-react"
 import { SimulateButton } from "./SimulateButton"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 interface TrackedItem {
   id: string
@@ -23,23 +25,87 @@ interface TrackedItem {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
+// Skeleton card for loading state
+function TrackedItemSkeleton() {
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4">
+      <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-zinc-600 to-zinc-700" />
+      <div className="flex items-center justify-between pl-3">
+        <div className="flex items-center gap-4">
+          <Skeleton className="size-14 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        </div>
+        <div className="space-y-2 text-right">
+          <Skeleton className="ml-auto h-7 w-20" />
+          <Skeleton className="ml-auto h-4 w-28" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
   const [items, setItems] = useState<TrackedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const retryCount = useRef(0)
+  const maxRetries = 3
 
-  const fetchItems = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
+  const fetchItems = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true)
+    } else {
+      setIsLoading(true)
+    }
+    setHasError(false)
+
     try {
-      const response = await fetch(`${API_URL}/api/products/tracked`)
-      if (!response.ok) throw new Error("Failed to fetch tracked items")
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout for Railway cold start
+
+      const response = await fetch(`${API_URL}/api/products/tracked`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`)
+      }
+
       const data = await response.json()
       setItems(data.tracked_items || [])
+      retryCount.current = 0 // Reset retry count on success
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setHasError(true)
+      const isAbort = err instanceof Error && err.name === "AbortError"
+      const message = isAbort
+        ? "Request timed out. The server may be starting up."
+        : err instanceof Error
+          ? err.message
+          : "Failed to load tracked items"
+
+      // Auto-retry for timeouts (Railway cold start)
+      if (isAbort && retryCount.current < maxRetries) {
+        retryCount.current++
+        toast.loading(`Server starting up... Retry ${retryCount.current}/${maxRetries}`, {
+          id: "tracked-items-retry",
+          duration: 3000,
+        })
+        setTimeout(() => fetchItems(isManualRefresh), 2000)
+        return
+      }
+
+      toast.error(message, {
+        id: "tracked-items-error",
+        description: "Check your connection and try again",
+      })
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }, [])
 
@@ -47,30 +113,75 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
     fetchItems()
   }, [fetchItems, refreshKey])
 
+  const handleRefresh = () => {
+    retryCount.current = 0
+    fetchItems(true)
+  }
+
+  // Loading state with skeletons
   if (isLoading) {
     return (
       <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="size-8 animate-spin text-zinc-500" />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
+                <Package className="size-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-white">Tracked Items</CardTitle>
+                <p className="text-sm text-zinc-400">Loading your items...</p>
+              </div>
+            </div>
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <TrackedItemSkeleton />
+          <TrackedItemSkeleton />
+          <TrackedItemSkeleton />
         </CardContent>
       </Card>
     )
   }
 
-  if (error) {
+  // Error state with empty card (toast handles the message)
+  if (hasError && items.length === 0) {
     return (
       <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-sm text-red-400">{error}</p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchItems}
-            className="mt-4 text-zinc-400 hover:text-white"
-          >
-            <RefreshCw className="mr-2 size-4" />
-            Try Again
-          </Button>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-600 to-zinc-700">
+                <WifiOff className="size-5 text-zinc-400" />
+              </div>
+              <div>
+                <CardTitle className="text-white">Tracked Items</CardTitle>
+                <p className="text-sm text-zinc-400">Unable to connect</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              className="size-8 text-zinc-400 hover:text-white"
+            >
+              <RefreshCw className="size-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-12 text-center">
+            <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-zinc-800/50">
+              <WifiOff className="size-6 text-zinc-600" />
+            </div>
+            <p className="text-sm font-medium text-zinc-400">
+              Couldn&apos;t load your items
+            </p>
+            <p className="mt-1 text-xs text-zinc-600">
+              The server might be waking up. Try refreshing in a moment.
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
@@ -96,16 +207,17 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
               {items.length} {items.length === 1 ? "item" : "items"}
             </span>
             <SimulateButton
-              onSimulate={fetchItems}
+              onSimulate={handleRefresh}
               disabled={items.length === 0}
             />
             <Button
               variant="ghost"
               size="icon"
-              onClick={fetchItems}
-              className="size-8 text-zinc-400 hover:text-white"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="size-8 text-zinc-400 hover:text-white disabled:opacity-50"
             >
-              <RefreshCw className="size-4" />
+              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
@@ -119,8 +231,8 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
             <p className="text-sm font-medium text-zinc-400">
               No items tracked yet
             </p>
-            <p className="mt-1 text-xs text-zinc-600">
-              Start chatting to track a product!
+            <p className="mt-1 max-w-[200px] text-xs text-zinc-600">
+              Start a conversation to track your first product and get price alerts!
             </p>
           </div>
         ) : (
