@@ -2,8 +2,14 @@
 
 import json
 from typing import Any
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI  # type: ignore
 from app.config import get_settings
+from app.services.products import (
+    search_products,
+    get_products_by_category,
+    create_tracked_item,
+    get_tracked_items,
+)
 
 settings = get_settings()
 client = AsyncOpenAI(api_key=settings.openai_api_key)
@@ -147,17 +153,63 @@ async def process_message(
 async def get_tool_response(tool_name: str, tool_args: dict) -> str:
     """
     Execute a tool and return the result as a string for the LLM.
-    This is a placeholder - actual implementation will connect to database.
+    Connects to Supabase for actual data operations.
     """
-    if tool_name == "track_product":
-        return f"Successfully added '{tool_args['product_name']}' to your watchlist with target price ${tool_args['target_price']:.2f}"
+    try:
+        if tool_name == "track_product":
+            product_name = tool_args["product_name"]
+            target_price = tool_args["target_price"]
 
-    elif tool_name == "get_recommendations":
-        category = tool_args.get("category", "Electronics")
-        max_price = tool_args.get("max_price", 1000)
-        return f"Found recommendations in {category} under ${max_price:.2f}: [Placeholder - will connect to database]"
+            products = search_products(product_name)
 
-    elif tool_name == "list_tracked_items":
-        return "Currently tracking: [Placeholder - will connect to database]"
+            if not products:
+                return f"I couldn't find a product matching '{product_name}' in our database. We currently have TVs, Headphones, and Laptops available."
 
-    return "Unknown tool"
+            product = products[0]
+
+            tracked = create_tracked_item(
+                product_id=product["id"], target_price=target_price
+            )
+
+            if tracked:
+                return f"Great! I'm now tracking '{product['name']}' (currently ${product['current_price']:.2f}) and will alert you when it drops below ${target_price:.2f}."
+            else:
+                return f"I found '{product['name']}' but had trouble adding it to your watchlist. Please try again."
+
+        elif tool_name == "get_recommendations":
+            category = tool_args.get("category", "Electronics")
+            max_price = tool_args.get("max_price")
+
+            products = get_products_by_category(category, max_price)
+
+            if not products:
+                return (
+                    f"I couldn't find any products in the '{category}' category"
+                    + (f" under ${max_price:.2f}" if max_price else "")
+                    + "."
+                )
+
+            product_list = "\n".join(
+                [f"- {p['name']}: ${p['current_price']:.2f}" for p in products]
+            )
+            return f"Here are some {category} deals:\n{product_list}"
+
+        elif tool_name == "list_tracked_items":
+            items = get_tracked_items()
+
+            if not items:
+                return "You're not tracking any products yet. Try saying 'Track [product name] under $[price]' to get started!"
+
+            item_list = "\n".join(
+                [
+                    f"- {item['products']['name']}: watching for ${item['target_price']:.2f} (currently ${item['products']['current_price']:.2f})"
+                    for item in items
+                    if item.get("products")
+                ]
+            )
+            return f"You're currently tracking:\n{item_list}"
+
+        return "Unknown tool"
+
+    except Exception as e:
+        return f"I encountered an error: {str(e)}. Please try again."
