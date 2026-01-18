@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/Header"
+import { ChatInterface } from "@/components/chat/ChatInterface"
 import {
   Card,
   CardContent,
@@ -6,17 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  MessageSquare,
-  Package,
-  TrendingDown,
-  Bell,
-  Send,
-  Sparkles,
-} from "lucide-react"
+import { MessageSquare, Package, Bell } from "lucide-react"
 
 export default function Home() {
   return (
@@ -48,54 +39,7 @@ export default function Home() {
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col p-0">
-              {/* Chat messages area */}
-              <ScrollArea className="flex-1 p-6">
-                <div className="space-y-4">
-                  {/* Welcome message */}
-                  <div className="flex gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600">
-                      <Sparkles className="size-4 text-white" />
-                    </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-zinc-800/50 px-4 py-3">
-                      <p className="text-sm text-zinc-300">
-                        Hey! I&apos;m your DealHunter AI assistant. I can help
-                        you:
-                      </p>
-                      <ul className="mt-2 space-y-1 text-sm text-zinc-400">
-                        <li className="flex items-center gap-2">
-                          <TrendingDown className="size-3 text-emerald-500" />
-                          Track product prices across stores
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Bell className="size-3 text-emerald-500" />
-                          Set up price drop alerts
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <Package className="size-3 text-emerald-500" />
-                          Find the best deals on items you want
-                        </li>
-                      </ul>
-                      <p className="mt-3 text-sm text-zinc-300">
-                        Just paste a product URL or tell me what you&apos;re
-                        looking for!
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-
-              {/* Chat input */}
-              <div className="border-t border-zinc-800/50 p-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Paste a product URL or describe what you're looking for..."
-                    className="flex-1 border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500"
-                  />
-                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700">
-                    <Send className="size-4" />
-                  </Button>
-                </div>
-              </div>
+              <ChatInterface />
             </CardContent>
           </Card>
 
