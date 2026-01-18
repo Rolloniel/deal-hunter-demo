@@ -32,3 +32,4 @@ class TrackedItem(BaseModel):
 
 class SimulateRequest(BaseModel):
     item_id: Optional[UUID] = None
+    email: Optional[str] = None

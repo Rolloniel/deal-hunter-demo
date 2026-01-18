@@ -44,6 +44,11 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
     target_price = item["target_price"]
     old_price = product.get("current_price", target_price + 100)
 
+    # Determine recipient email
+    recipient_email = (
+        request.email if request and request.email else settings.demo_alert_email
+    )
+
     # Calculate new price (10-50 below target)
     price_drop = random.uniform(10, 50)
     new_price = target_price - price_drop
@@ -63,7 +68,7 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
     email_error = None
     try:
         email_sent = await send_price_alert(
-            to_email=settings.demo_alert_email,
+            to_email=recipient_email,
             product_name=product.get("name", "Unknown Product"),
             old_price=old_price,
             new_price=new_price,
@@ -93,6 +98,45 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
         "new_price": new_price,
         "target_price": target_price,
         "email_sent": email_sent,
-        "email_recipient": settings.demo_alert_email if email_sent else None,
+        "email_recipient": recipient_email,
         "email_error": email_error,
     }
+
+
+@router.get("")
+async def get_alerts():
+    """Get all triggered alerts with product names."""
+    db = get_db()
+
+    try:
+        # Try nested embed query
+        result = (
+            db.table("alerts")
+            .select("*, tracked_items(product_id, products(name))")
+            .execute()
+        )
+
+        alerts = []
+        for alert in result.data:
+            product_name = "Unknown Product"
+            tracked_items = alert.get("tracked_items")
+            if tracked_items:
+                products = tracked_items.get("products")
+                if products:
+                    product_name = products.get("name", "Unknown Product")
+
+            alerts.append(
+                {
+                    "id": alert.get("id"),
+                    "product_name": product_name,
+                    "old_price": alert.get("old_price"),
+                    "new_price": alert.get("new_price"),
+                    "email_sent": alert.get("email_sent"),
+                    "created_at": alert.get("created_at"),
+                }
+            )
+
+        return {"alerts": alerts}
+    except Exception as e:
+        print(f"Error fetching alerts: {e}")
+        return {"alerts": []}

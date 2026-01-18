@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, TrendingDown, RefreshCw, WifiOff } from "lucide-react"
+import { Package, TrendingDown, RefreshCw, WifiOff, RotateCcw } from "lucide-react"
 import { SimulateButton } from "./SimulateButton"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
@@ -55,7 +55,14 @@ function TrackedItemSkeleton() {
   )
 }
 
-export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
+interface TrackedItemsProps {
+  refreshKey?: number
+  email?: string
+  onSimulate?: () => void
+  onReset?: () => void
+}
+
+export function TrackedItems({ refreshKey, email, onSimulate, onReset }: TrackedItemsProps) {
   const [items, setItems] = useState<TrackedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -168,14 +175,6 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
                 <p className="text-sm text-zinc-400">Unable to connect</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleRefresh}
-              className="size-8 text-zinc-400 hover:text-white"
-            >
-              <RefreshCw className="size-4" />
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -215,7 +214,8 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
               {items.length} {items.length === 1 ? "item" : "items"}
             </span>
             <SimulateButton
-              onSimulate={handleRefresh}
+              email={email}
+              onSimulate={onSimulate}
               disabled={items.length === 0}
             />
             <Button
@@ -227,6 +227,17 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
             >
               <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
             </Button>
+            {onReset && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onReset}
+                className="size-8 text-zinc-400 hover:text-white"
+                title="Reset Demo"
+              >
+                <RotateCcw className="size-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

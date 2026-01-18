@@ -16,11 +16,12 @@ const getApiUrl = () => {
 }
 
 interface SimulateButtonProps {
+  email?: string
   onSimulate?: () => void
   disabled?: boolean
 }
 
-export function SimulateButton({ onSimulate, disabled }: SimulateButtonProps) {
+export function SimulateButton({ email, onSimulate, disabled }: SimulateButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSimulate = async () => {
@@ -29,6 +30,7 @@ export function SimulateButton({ onSimulate, disabled }: SimulateButtonProps) {
       const response = await fetch(`${getApiUrl()}/api/alerts/simulate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email || undefined }),
       })
 
       if (!response.ok) {
@@ -39,7 +41,7 @@ export function SimulateButton({ onSimulate, disabled }: SimulateButtonProps) {
       const data = await response.json()
 
       toast.success("Price Drop Simulated!", {
-        description: `${data.message} Alert will be sent to alerts@kliuiev.com`,
+        description: `${data.message} Alert sent to ${data.email_recipient}`,
         duration: 5000,
       })
 

@@ -1,8 +1,6 @@
 {
-  "active_plan": "/home/rolloniel/synology_nas/projects/upwork/deal_hunter/.sisyphus/plans/deal-hunter-poc.md",
-  "started_at": "2026-01-18T17:12:08.773Z",
-  "session_ids": [
-    "ses_42de846ddffe6N3zzO1cZ0gZDH"
-  ],
-  "plan_name": "deal-hunter-poc"
+  "active_plan": "/home/rolloniel/synology_nas/projects/upwork/deal_hunter/.sisyphus/plans/fix-reset-demo-bug.md",
+  "started_at": "2026-01-18T21:28:45.145Z",
+  "session_ids": ["ses_42cfd58b6ffek7hmU1f01xSwQo"],
+  "plan_name": "fix-reset-demo-bug"
 }

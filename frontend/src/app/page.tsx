@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Header } from "@/components/layout/Header"
 import { ChatInterface } from "@/components/chat/ChatInterface"
 import { TrackedItems } from "@/components/dashboard/TrackedItems"
+import { PriceAlerts } from "@/components/dashboard/PriceAlerts"
+import { EmailInput } from "@/components/dashboard/EmailInput"
 import {
   Card,
   CardContent,
@@ -11,10 +14,48 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { MessageSquare, Bell } from "lucide-react"
+import { MessageSquare } from "lucide-react"
+
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:8000`
+  }
+  return "http://localhost:8000"
+}
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
+  const [email, setEmail] = useState("")
+
+  // Load email from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("dealhunter_alert_email")
+    if (saved) setEmail(saved)
+  }, [])
+
+  // Email change handler with localStorage persistence
+  const handleEmailChange = (newEmail: string) => {
+    setEmail(newEmail)
+    localStorage.setItem("dealhunter_alert_email", newEmail)
+  }
+
+  // Reset demo handler
+  const handleReset = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/demo/reset`, { method: "POST" })
+      if (response.ok) {
+        toast.success("Demo reset complete")
+        setRefreshKey(prev => prev + 1)
+      } else {
+        toast.error("Reset failed")
+      }
+    } catch {
+      toast.error("Reset failed", { description: "Could not connect to server" })
+    }
+  }
 
   const handleChatComplete = () => {
     // Trigger refresh of tracked items after chat interaction
@@ -57,42 +98,23 @@ export default function Home() {
           {/* Dashboard Section */}
           <div className="flex flex-col gap-6">
             {/* Tracked Items Card - Dynamic */}
-            <TrackedItems refreshKey={refreshKey} />
+            <TrackedItems 
+              refreshKey={refreshKey}
+              email={email}
+              onSimulate={handleChatComplete}
+              onReset={handleReset}
+            />
 
-            {/* Price Alerts Card */}
-            <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-600">
-                      <Bell className="size-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white">Price Alerts</CardTitle>
-                      <CardDescription>
-                        Get notified when prices drop
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-400">
-                    0 active
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-12 text-center">
-                  <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-zinc-800/50">
-                    <Bell className="size-6 text-zinc-600" />
-                  </div>
-                  <p className="text-sm font-medium text-zinc-400">
-                    No alerts configured
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-600">
-                    Ask me to alert you when a price drops
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+{/* Price Alerts Card - Dynamic */}
+            <PriceAlerts 
+              refreshKey={refreshKey}
+              emailInput={
+                <EmailInput 
+                  value={email} 
+                  onChange={handleEmailChange}
+                />
+              }
+            />
           </div>
         </div>
       </main>
