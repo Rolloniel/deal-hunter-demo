@@ -22,7 +22,19 @@ const EXAMPLE_PROMPTS = [
   "What am I tracking?",
 ]
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+// Use same hostname as the current page to avoid CORS issues in development
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  // In browser, use same hostname to avoid localhost vs 127.0.0.1 CORS issues
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname
+    return `http://${hostname}:8000`
+  }
+  return "http://localhost:8000"
+}
+const API_URL = getApiUrl()
 
 interface ChatInterfaceProps {
   onMessageComplete?: () => void

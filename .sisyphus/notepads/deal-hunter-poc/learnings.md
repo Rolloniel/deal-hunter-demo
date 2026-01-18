@@ -582,3 +582,42 @@ except Exception as e:
 - Code blocks for setup commands with comments
 - Link to detailed deployment docs instead of duplicating
 - MIT license for open source POC
+
+## Session Continuation: Local Verification (2026-01-18)
+
+### CORS localhost vs 127.0.0.1 Issue
+- Browser treats `localhost` and `127.0.0.1` as different origins
+- Frontend on `127.0.0.1:3001` cannot fetch from `localhost:8000` due to CORS
+- **Solution**: Dynamic API URL based on `window.location.hostname`
+- Pattern: `http://${window.location.hostname}:8000` in client-side code
+- Must check `typeof window !== "undefined"` for SSR compatibility
+
+### CORS Configuration Update
+- Added `http://localhost:3001` and `http://127.0.0.1:3001` to CORS origins
+- Full list: production domain + localhost:3000/3001 + 127.0.0.1:3000/3001
+- CORS preflight (OPTIONS) fails if endpoint throws error before middleware runs
+
+### Error Handling for CORS Compatibility
+- Unhandled exceptions in endpoints cause CORS preflight to fail with 400/500
+- **Solution**: Wrap database operations in try/except, return proper HTTPException
+- Pattern: Check for "Invalid API key" or "401" in error message, return 503
+- 503 (Service Unavailable) is appropriate for database connection issues
+
+### NAS Symlink Issues with npm
+- Synology NAS doesn't support symlinks properly
+- `npm install` fails with `ENOTSUP: operation not supported on socket, symlink`
+- **Workaround**: Run Next.js directly: `node node_modules/next/dist/bin/next dev`
+- Environment variables can be passed inline: `NEXT_PUBLIC_API_URL=... node ...`
+
+### Verification Results
+- ✅ Chat interface works with SSE streaming
+- ✅ AI responds to messages correctly
+- ✅ Flight tracking guardrail works ("I can't track flights...")
+- ✅ Product tracking intent extraction works (tool calls visible)
+- ❌ Database operations fail due to invalid Supabase credentials
+- ❌ Dashboard shows "Unable to connect" (expected with invalid credentials)
+
+### Remaining Blockers
+- Supabase credentials in .env are invalid (47 chars vs 200+ char JWT)
+- User must provide valid credentials from Supabase Dashboard > Settings > API
+- After credentials fixed, full flow should work end-to-end

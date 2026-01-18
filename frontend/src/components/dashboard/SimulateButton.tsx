@@ -5,7 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Zap, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  if (typeof window !== "undefined") {
+    return `http://${window.location.hostname}:8000`
+  }
+  return "http://localhost:8000"
+}
+const API_URL = getApiUrl()
 
 interface SimulateButtonProps {
   onSimulate?: () => void
