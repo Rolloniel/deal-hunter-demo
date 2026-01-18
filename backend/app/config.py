@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     frontend_url: str = "https://dealhunter.kliuiev.com"
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
 
 
 @lru_cache()
