@@ -618,6 +618,46 @@ except Exception as e:
 - ❌ Dashboard shows "Unable to connect" (expected with invalid credentials)
 
 ### Remaining Blockers
-- Supabase credentials in .env are invalid (47 chars vs 200+ char JWT)
-- User must provide valid credentials from Supabase Dashboard > Settings > API
-- After credentials fixed, full flow should work end-to-end
+- ~~Supabase credentials in .env are invalid (47 chars vs 200+ char JWT)~~ RESOLVED
+- ~~User must provide valid credentials from Supabase Dashboard > Settings > API~~ DONE
+- ~~After credentials fixed, full flow should work end-to-end~~ VERIFIED
+
+## Final Verification (2026-01-18)
+
+### All Features Verified Working
+
+| Feature | Status | Evidence |
+|---------|--------|----------|
+| Chat interface loads | ✅ PASS | Playwright verified at localhost:3002 |
+| "Track Samsung TV under $900" | ✅ PASS | AI: "Great! I'm now tracking 'Samsung 65" OLED 4K Smart TV'..." |
+| Dashboard shows tracked items | ✅ PASS | 3 items displayed with prices and target alerts |
+| "Show me laptop deals under $2500" | ✅ PASS | AI: "Here are some Laptop deals: - MacBook Pro 14" M3: $1999.99" |
+| "What am I tracking?" | ✅ PASS | AI listed all 3 tracked items with target prices |
+| Simulate Price Drop button | ✅ PASS | Toast: "Price Drop Simulated! Price dropped to $978.85!" |
+| Email sent | ✅ PASS | API returned `email_sent: true`, `email_recipient: alerts@kliuiev.com` |
+| Flight tracking guardrail | ✅ PASS | AI: "I can only help with product deals..." |
+| Dashboard price updates | ✅ PASS | Price updated from $957.85 to $962.36 after simulate |
+| SSE streaming | ✅ PASS | Responses stream word-by-word |
+
+### Product Search Improvements Made
+- Search now skips common words: "inch", "inches", "the", "a", "an", "for", "with"
+- Added fallback: if multi-word search fails, tries individual words
+- Example: "Samsung 65 inch TV" now finds "Samsung 65" OLED 4K Smart TV"
+
+### LLM Tool Calling Improvements Made
+- Updated system prompt to be more aggressive about calling tools
+- AI now immediately calls `track_product` instead of asking for clarification
+- Added available products hint to system prompt
+
+### API URL Runtime Evaluation Fix
+- Changed `API_URL` from module-level constant to runtime function call `getApiUrl()`
+- This ensures `window.location.hostname` is evaluated at runtime, not server-side
+- Fixes CORS issues when accessing from different hostnames
+
+### Implementation Complete
+All code tasks (0.1 - 6.3) are complete. Remaining items are USER ACTIONS:
+1. Deploy backend to Railway
+2. Deploy frontend to Vercel with custom domain
+3. Test live deployment
+4. Record Loom demo video
+5. Submit Upwork proposal
