@@ -14,7 +14,6 @@ const getApiUrl = () => {
   }
   return "http://localhost:8000"
 }
-const API_URL = getApiUrl()
 
 interface SimulateButtonProps {
   onSimulate?: () => void
@@ -27,7 +26,7 @@ export function SimulateButton({ onSimulate, disabled }: SimulateButtonProps) {
   const handleSimulate = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/api/alerts/simulate`, {
+      const response = await fetch(`${getApiUrl()}/api/alerts/simulate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       })

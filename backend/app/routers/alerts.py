@@ -78,6 +78,8 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
     db.table("alerts").insert(
         {
             "tracked_item_id": item["id"],
+            "old_price": old_price,
+            "new_price": new_price,
             "email_sent": email_sent,
         }
     ).execute()

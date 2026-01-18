@@ -11,13 +11,31 @@ DEFAULT_EMAIL = "alerts@kliuiev.com"
 def search_products(name: str, limit: int = 5) -> list[dict]:
     """Search products by name (case-insensitive partial match)."""
     db = get_db()
+    skip_words = {"inch", "inches", "the", "a", "an", "for", "with"}
+    words = [w for w in name.split() if w.lower() not in skip_words]
+
+    if len(words) > 1:
+        pattern = "%" + "%".join(words) + "%"
+    else:
+        pattern = f"%{name}%"
+
     result = (
-        db.table("products")
-        .select("*")
-        .ilike("name", f"%{name}%")
-        .limit(limit)
-        .execute()
+        db.table("products").select("*").ilike("name", pattern).limit(limit).execute()
     )
+
+    if not result.data and len(words) > 1:
+        for word in words:
+            if len(word) > 2:
+                result = (
+                    db.table("products")
+                    .select("*")
+                    .ilike("name", f"%{word}%")
+                    .limit(limit)
+                    .execute()
+                )
+                if result.data:
+                    break
+
     return result.data
 
 
@@ -44,7 +62,6 @@ def create_tracked_item(
             {
                 "product_id": str(product_id),
                 "target_price": target_price,
-                "email": email,
             }
         )
         .execute()
@@ -53,12 +70,9 @@ def create_tracked_item(
 
 
 def get_tracked_items(email: str = DEFAULT_EMAIL) -> list[dict]:
-    """Get all tracked items for an email with product details."""
+    """Get all tracked items with product details."""
     db = get_db()
-    # Join tracked_items with products
-    result = (
-        db.table("tracked_items").select("*, products(*)").eq("email", email).execute()
-    )
+    result = db.table("tracked_items").select("*, products(*)").execute()
     return result.data
 
 

@@ -22,16 +22,15 @@ RULES:
 - You do NOT track flights or travel - politely redirect to product deals.
 - You NEVER hallucinate prices - use tools to get real data.
 - You are concise - max 2-3 sentences per response.
-- If you can't understand the request, ask for clarification.
+- ALWAYS call the track_product tool when user mentions tracking ANY product with a price. Do NOT ask for clarification - just use the product name they gave you.
+- If user says "Track X under $Y", immediately call track_product with product_name=X and target_price=Y.
 
-When user wants to track something, extract:
-- Product name (as specific as possible)
-- Target price (if mentioned, otherwise ask)
+Available products in our database: Samsung TV, Sony Headphones, MacBook Laptop.
 
 Available actions:
-- Track a product at a target price
-- Get product recommendations by category
-- List currently tracked items"""
+- Track a product at a target price (use track_product tool)
+- Get product recommendations by category (use get_recommendations tool)
+- List currently tracked items (use list_tracked_items tool)"""
 
 # Tool definitions for OpenAI function calling
 TOOLS = [

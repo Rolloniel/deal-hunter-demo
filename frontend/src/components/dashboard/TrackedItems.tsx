@@ -32,7 +32,6 @@ const getApiUrl = () => {
   }
   return "http://localhost:8000"
 }
-const API_URL = getApiUrl()
 
 // Skeleton card for loading state
 function TrackedItemSkeleton() {
@@ -76,7 +75,7 @@ export function TrackedItems({ refreshKey }: { refreshKey?: number }) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout for Railway cold start
 
-      const response = await fetch(`${API_URL}/api/products/tracked`, {
+      const response = await fetch(`${getApiUrl()}/api/products/tracked`, {
         signal: controller.signal,
       })
       clearTimeout(timeoutId)

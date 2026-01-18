@@ -22,19 +22,15 @@ const EXAMPLE_PROMPTS = [
   "What am I tracking?",
 ]
 
-// Use same hostname as the current page to avoid CORS issues in development
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
-  // In browser, use same hostname to avoid localhost vs 127.0.0.1 CORS issues
   if (typeof window !== "undefined") {
-    const hostname = window.location.hostname
-    return `http://${hostname}:8000`
+    return `http://${window.location.hostname}:8000`
   }
   return "http://localhost:8000"
 }
-const API_URL = getApiUrl()
 
 interface ChatInterfaceProps {
   onMessageComplete?: () => void
@@ -133,7 +129,7 @@ export function ChatInterface({ onMessageComplete }: ChatInterfaceProps) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout for Railway cold start
 
-      const response = await fetch(`${API_URL}/api/chat`, {
+      const response = await fetch(`${getApiUrl()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
