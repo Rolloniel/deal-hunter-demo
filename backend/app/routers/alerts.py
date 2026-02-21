@@ -1,5 +1,6 @@
 """Alerts router with simulate functionality."""
 
+import logging
 import random
 from typing import Optional
 
@@ -10,6 +11,8 @@ from app.db import get_db
 from app.models.schemas import SimulateRequest
 from app.services.email import send_price_alert
 from app.services.products import get_tracked_items
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 settings = get_settings()
@@ -77,7 +80,7 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
         )
     except Exception as e:
         email_error = str(e)
-        print(f"Email send failed: {e}")
+        logger.error("Email send failed: %s", e)
 
     # Create alert record
     db.table("alerts").insert(
@@ -138,5 +141,5 @@ async def get_alerts():
 
         return {"alerts": alerts}
     except Exception as e:
-        print(f"Error fetching alerts: {e}")
+        logger.error("Error fetching alerts: %s", e)
         return {"alerts": []}

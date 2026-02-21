@@ -1,6 +1,7 @@
 """OpenAI LLM service with tool calling for intent extraction."""
 
 import json
+import logging
 from typing import Any
 from openai import AsyncOpenAI  # type: ignore
 from app.config import get_settings
@@ -10,6 +11,8 @@ from app.services.products import (
     create_tracked_item,
     get_tracked_items,
 )
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 client = AsyncOpenAI(api_key=settings.openai_api_key)
@@ -208,7 +211,9 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
             )
             return f"You're currently tracking:\n{item_list}"
 
+        logger.warning("Unknown tool called: %s with args: %s", tool_name, tool_args)
         return "Unknown tool"
 
     except Exception as e:
+        logger.error("Tool execution error for %s: %s", tool_name, e)
         return f"I encountered an error: {str(e)}. Please try again."

@@ -1,7 +1,11 @@
 """Email service using Resend for price alerts."""
 
+import logging
+
 import resend
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 resend.api_key = settings.resend_api_key
@@ -98,5 +102,5 @@ async def send_price_alert(
         return bool(email.get("id"))
 
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        logger.error("Failed to send email: %s", e)
         return False
