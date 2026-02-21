@@ -133,14 +133,19 @@ async def process_message(
 
         # Extract tool calls if present
         if assistant_message.tool_calls:
-            result["tool_calls"] = [
-                {
+            parsed_tool_calls = []
+            for tc in assistant_message.tool_calls:
+                try:
+                    args = json.loads(tc.function.arguments)
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.error("Failed to parse tool arguments for %s: %s", tc.function.name, e)
+                    args = {}
+                parsed_tool_calls.append({
                     "id": tc.id,
                     "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments),
-                }
-                for tc in assistant_message.tool_calls
-            ]
+                    "arguments": args,
+                })
+            result["tool_calls"] = parsed_tool_calls
 
         return result
 
@@ -159,8 +164,13 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
     """
     try:
         if tool_name == "track_product":
-            product_name = tool_args["product_name"]
-            target_price = tool_args["target_price"]
+            product_name = tool_args.get("product_name")
+            target_price = tool_args.get("target_price")
+
+            if not product_name or not isinstance(product_name, str):
+                return "I need a product name to track. Try saying 'Track Samsung TV under $900'."
+            if target_price is None or not isinstance(target_price, (int, float)) or target_price <= 0:
+                return "I need a valid target price. Try saying 'Track Samsung TV under $900'."
 
             products = search_products(product_name)
 
@@ -181,6 +191,14 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
         elif tool_name == "get_recommendations":
             category = tool_args.get("category", "Electronics")
             max_price = tool_args.get("max_price")
+
+            if max_price is not None:
+                try:
+                    max_price = float(max_price)
+                    if max_price <= 0:
+                        max_price = None
+                except (TypeError, ValueError):
+                    max_price = None
 
             products = get_products_by_category(category, max_price)
 
