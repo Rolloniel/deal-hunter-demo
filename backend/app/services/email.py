@@ -1,5 +1,6 @@
 """Email service using Resend for price alerts."""
 
+import asyncio
 import logging
 
 import resend
@@ -9,6 +10,11 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 resend.api_key = settings.resend_api_key
+
+
+def _send_email_sync(params: dict) -> dict:
+    """Synchronous email send wrapper for use with asyncio.to_thread."""
+    return resend.Emails.send(params)
 
 
 async def send_price_alert(
@@ -97,7 +103,7 @@ async def send_price_alert(
             "html": html_content,
         }
 
-        email: resend.Emails.SendResponse = resend.Emails.send(params)
+        email = await asyncio.to_thread(_send_email_sync, params)
 
         return bool(email.get("id"))
 
