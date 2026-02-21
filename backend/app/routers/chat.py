@@ -53,7 +53,8 @@ async def generate_stream(message: str, session_id: str):
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     except Exception as e:
-        yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+        logger.error("Stream generation error: %s", e)
+        yield f"data: {json.dumps({'type': 'error', 'message': 'An error occurred processing your request. Please try again.'})}\n\n"
 
 
 @router.post("")
