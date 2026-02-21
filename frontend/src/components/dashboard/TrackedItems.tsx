@@ -68,6 +68,7 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [hasError, setHasError] = useState(false)
   const retryCount = useRef(0)
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const maxRetries = 3
 
   const fetchItems = useCallback(async (isManualRefresh = false) => {
@@ -78,9 +79,10 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
     }
     setHasError(false)
 
+    let timeoutId: NodeJS.Timeout | undefined
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout for Railway cold start
+      timeoutId = setTimeout(() => controller.abort(), 15000)
 
       const response = await fetch(`${getApiUrl()}/api/products/tracked`, {
         signal: controller.signal,
@@ -93,8 +95,9 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
 
       const data = await response.json()
       setItems(data.tracked_items || [])
-      retryCount.current = 0 // Reset retry count on success
+      retryCount.current = 0
     } catch (err) {
+      if (timeoutId) clearTimeout(timeoutId)
       setHasError(true)
       const isAbort = err instanceof Error && err.name === "AbortError"
       const message = isAbort
@@ -103,14 +106,13 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
           ? err.message
           : "Failed to load tracked items"
 
-      // Auto-retry for timeouts (Railway cold start)
       if (isAbort && retryCount.current < maxRetries) {
         retryCount.current++
         toast.loading(`Server starting up... Retry ${retryCount.current}/${maxRetries}`, {
           id: "tracked-items-retry",
           duration: 3000,
         })
-        setTimeout(() => fetchItems(isManualRefresh), 2000)
+        fetchTimeoutRef.current = setTimeout(() => fetchItems(isManualRefresh), 2000)
         return
       }
 
@@ -127,6 +129,12 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
   useEffect(() => {
     fetchItems()
   }, [fetchItems, refreshKey])
+
+  useEffect(() => {
+    return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current)
+    }
+  }, [])
 
   const handleRefresh = () => {
     retryCount.current = 0
