@@ -43,9 +43,12 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
         item = items[0]
 
     product = item.get("products", {})
-    product_id = item["product_id"]
-    target_price = item["target_price"]
-    old_price = product.get("current_price", target_price + 100)
+    product_id = item.get("product_id")
+    target_price = item.get("target_price")
+    old_price = product.get("current_price", target_price + 100 if target_price else 100)
+
+    if not product_id or target_price is None:
+        raise HTTPException(status_code=400, detail="Invalid tracked item data")
 
     # Determine recipient email
     recipient_email = (
