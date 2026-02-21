@@ -26,3 +26,6 @@ Thumbs.db
 
 # Planning files (local only)
 .sisyphus/
+
+# Git worktrees
+.worktrees/
