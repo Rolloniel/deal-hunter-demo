@@ -1,10 +1,13 @@
 """Chat router with SSE streaming."""
 
 import json
-from fastapi import APIRouter
+import logging
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from app.models.schemas import ChatMessage
 from app.services.llm import process_message, get_tool_response
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -18,15 +21,17 @@ async def generate_stream(message: str, session_id: str):
         # Handle tool calls if present
         if result.get("tool_calls"):
             for tool_call in result["tool_calls"]:
-                tool_result = await get_tool_response(
-                    tool_call["name"], tool_call["arguments"]
-                )
+                try:
+                    tool_result = await get_tool_response(
+                        tool_call["name"], tool_call["arguments"]
+                    )
+                except Exception as e:
+                    logger.error("Tool execution failed for %s: %s", tool_call["name"], e)
+                    tool_result = "I encountered an error processing your request. Please try again."
+
                 # Stream tool execution status
                 yield f"data: {json.dumps({'type': 'tool', 'name': tool_call['name']})}\n\n"
 
-                # Get final response after tool execution
-                # In a real implementation, we'd pass tool results back to LLM
-                # For POC, we'll use the tool result directly
                 final_response = tool_result
 
                 # Stream the response in chunks
@@ -37,11 +42,12 @@ async def generate_stream(message: str, session_id: str):
         else:
             # No tool calls - stream the content directly
             content = result.get("content", "")
-            if content:
-                words = content.split()
-                for i, word in enumerate(words):
-                    chunk = word + (" " if i < len(words) - 1 else "")
-                    yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
+            if not content:
+                content = "I'm not sure how to help with that. Try asking me to track a product or find deals!"
+            words = content.split()
+            for i, word in enumerate(words):
+                chunk = word + (" " if i < len(words) - 1 else "")
+                yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
 
         # Send done signal
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
@@ -71,23 +77,27 @@ async def chat(request: ChatMessage):
 
 @router.post("/sync")
 async def chat_sync(request: ChatMessage):
-    """
-    Non-streaming chat endpoint for testing.
-    Returns the complete response at once.
-    """
-    result = await process_message(request.message, request.session_id)
+    """Non-streaming chat endpoint for testing."""
+    try:
+        result = await process_message(request.message, request.session_id)
 
-    # Handle tool calls
-    if result.get("tool_calls"):
-        tool_responses = []
-        for tool_call in result["tool_calls"]:
-            tool_result = await get_tool_response(
-                tool_call["name"], tool_call["arguments"]
-            )
-            tool_responses.append({"tool": tool_call["name"], "result": tool_result})
-        return {
-            "response": tool_responses[0]["result"] if tool_responses else "",
-            "tool_calls": result["tool_calls"],
-        }
+        if result.get("tool_calls"):
+            tool_responses = []
+            for tool_call in result["tool_calls"]:
+                try:
+                    tool_result = await get_tool_response(
+                        tool_call["name"], tool_call["arguments"]
+                    )
+                except Exception as e:
+                    logger.error("Tool execution failed in sync: %s", e)
+                    tool_result = "Error processing request"
+                tool_responses.append({"tool": tool_call["name"], "result": tool_result})
+            return {
+                "response": tool_responses[0]["result"] if tool_responses else "",
+                "tool_calls": result["tool_calls"],
+            }
 
-    return {"response": result.get("content", "")}
+        return {"response": result.get("content", "")}
+    except Exception as e:
+        logger.error("Chat sync error: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to process message")
