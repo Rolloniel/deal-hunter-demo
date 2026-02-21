@@ -82,6 +82,8 @@ export function ChatInterface({ onMessageComplete, resetKey }: ChatInterfaceProp
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const statusTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -90,12 +92,12 @@ export function ChatInterface({ onMessageComplete, resetKey }: ChatInterfaceProp
     }
   }, [messages])
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current)
-      }
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+      if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current)
+      if (abortControllerRef.current) abortControllerRef.current.abort()
     }
   }, [])
 
@@ -136,8 +138,11 @@ export function ChatInterface({ onMessageComplete, resetKey }: ChatInterfaceProp
     ])
 
     try {
+      // Cancel any previous request
+      if (abortControllerRef.current) abortControllerRef.current.abort()
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout for Railway cold start
+      abortControllerRef.current = controller
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
 
       const response = await fetch(`${getApiUrl()}/api/chat`, {
         method: "POST",
@@ -244,16 +249,17 @@ export function ChatInterface({ onMessageComplete, resetKey }: ChatInterfaceProp
           : "Check your connection and try again.",
       })
 
-      // Auto-retry once for timeout errors
       if (shouldRetry) {
+        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
         retryTimeoutRef.current = setTimeout(() => {
           setConnectionStatus("idle")
         }, 5000)
       }
     } finally {
       setIsLoading(false)
-      // Reset connection status after a delay if connected
-      setTimeout(() => {
+      // Reset connection status after delay, but only if currently "connected"
+      if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current)
+      statusTimeoutRef.current = setTimeout(() => {
         setConnectionStatus((prev) => (prev === "connected" ? "idle" : prev))
       }, 2000)
     }
