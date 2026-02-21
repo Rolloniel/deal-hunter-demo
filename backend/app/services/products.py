@@ -69,6 +69,31 @@ def create_tracked_item(
     return result.data[0] if result.data else {}
 
 
+def get_tracked_item_by_product_id(product_id: UUID) -> Optional[dict]:
+    """Check if a product is already being tracked."""
+    db = get_db()
+    result = (
+        db.table("tracked_items")
+        .select("*")
+        .eq("product_id", str(product_id))
+        .limit(1)
+        .execute()
+    )
+    return result.data[0] if result.data else None
+
+
+def update_tracked_item_target_price(item_id: str, target_price: float) -> dict:
+    """Update the target price for an existing tracked item."""
+    db = get_db()
+    result = (
+        db.table("tracked_items")
+        .update({"target_price": target_price})
+        .eq("id", item_id)
+        .execute()
+    )
+    return result.data[0] if result.data else {}
+
+
 def get_tracked_items(email: str = DEFAULT_EMAIL) -> list[dict]:
     """Get all tracked items with product details."""
     db = get_db()

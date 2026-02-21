@@ -10,6 +10,8 @@ from app.services.products import (
     get_products_by_category,
     create_tracked_item,
     get_tracked_items,
+    get_tracked_item_by_product_id,
+    update_tracked_item_target_price,
 )
 
 logger = logging.getLogger(__name__)
@@ -178,6 +180,12 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
                 return f"I couldn't find a product matching '{product_name}' in our database. We currently have TVs, Headphones, and Laptops available."
 
             product = products[0]
+
+            # Check if already tracked
+            existing = get_tracked_item_by_product_id(product["id"])
+            if existing:
+                update_tracked_item_target_price(existing["id"], target_price)
+                return f"Updated tracking for '{product['name']}' (currently ${product['current_price']:.2f}). New alert target: ${target_price:.2f}."
 
             tracked = create_tracked_item(
                 product_id=product["id"], target_price=target_price
