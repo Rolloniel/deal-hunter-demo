@@ -34,8 +34,14 @@ export function SimulateButton({ email, onSimulate, disabled }: SimulateButtonPr
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || "Failed to simulate price drop")
+        let errorMessage = "Failed to simulate price drop"
+        try {
+          const error = await response.json()
+          errorMessage = error.detail || errorMessage
+        } catch {
+          // Response wasn't JSON (e.g., HTML error page)
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

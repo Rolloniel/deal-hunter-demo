@@ -32,17 +32,21 @@ interface PriceAlertsProps {
 export function PriceAlerts({ refreshKey, emailInput }: PriceAlertsProps) {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
 
   const fetchAlerts = useCallback(async () => {
     setIsLoading(true)
+    setHasError(false)
     try {
       const response = await fetch(`${getApiUrl()}/api/alerts`)
-      if (response.ok) {
-        const data = await response.json()
-        setAlerts(data.alerts || [])
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`)
       }
+      const data = await response.json()
+      setAlerts(data.alerts || [])
     } catch (err) {
       console.error("Failed to fetch alerts:", err)
+      setHasError(true)
     } finally {
       setIsLoading(false)
     }
@@ -73,6 +77,24 @@ export function PriceAlerts({ refreshKey, emailInput }: PriceAlertsProps) {
           <Skeleton className="h-16 w-full rounded-lg" />
           <Skeleton className="h-16 w-full rounded-lg" />
         </CardContent>
+      </Card>
+    )
+  }
+
+  if (hasError && alerts.length === 0) {
+    return (
+      <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-600 to-zinc-700">
+              <Bell className="size-5 text-zinc-400" />
+            </div>
+            <div>
+              <CardTitle className="text-white">Price Alerts</CardTitle>
+              <CardDescription>Unable to load alerts</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
       </Card>
     )
   }
