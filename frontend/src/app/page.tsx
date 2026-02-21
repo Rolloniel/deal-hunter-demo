@@ -28,6 +28,7 @@ const getApiUrl = () => {
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
+  const [chatResetKey, setChatResetKey] = useState(0)
   const [email, setEmail] = useState("")
 
   // Load email from localStorage on mount
@@ -49,6 +50,7 @@ export default function Home() {
       if (response.ok) {
         toast.success("Demo reset complete")
         setRefreshKey(prev => prev + 1)
+        setChatResetKey(prev => prev + 1)
       } else {
         toast.error("Reset failed")
       }
@@ -91,7 +93,7 @@ export default function Home() {
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col p-0">
-              <ChatInterface onMessageComplete={handleChatComplete} />
+              <ChatInterface onMessageComplete={handleChatComplete} resetKey={chatResetKey} />
             </CardContent>
           </Card>
 

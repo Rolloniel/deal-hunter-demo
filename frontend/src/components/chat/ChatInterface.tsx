@@ -34,6 +34,7 @@ const getApiUrl = () => {
 
 interface ChatInterfaceProps {
   onMessageComplete?: () => void
+  resetKey?: number
 }
 
 // Connection status indicator component
@@ -73,7 +74,7 @@ function ConnectionIndicator({ status }: { status: ConnectionStatus }) {
   )
 }
 
-export function ChatInterface({ onMessageComplete }: ChatInterfaceProps) {
+export function ChatInterface({ onMessageComplete, resetKey }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -97,6 +98,15 @@ export function ChatInterface({ onMessageComplete }: ChatInterfaceProps) {
       }
     }
   }, [])
+
+  // Clear messages on reset
+  useEffect(() => {
+    if (resetKey && resetKey > 0) {
+      setMessages([])
+      setInput("")
+      setConnectionStatus("idle")
+    }
+  }, [resetKey])
 
   const handleSubmit = async (e: FormEvent, retryMessage?: string) => {
     e?.preventDefault?.()
