@@ -278,16 +278,19 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
                   <div className="flex items-center justify-between pl-3">
                     <div className="flex items-center gap-4">
                       {/* Product image placeholder */}
-                      <div className="flex size-14 items-center justify-center rounded-lg bg-zinc-700/50 ring-1 ring-zinc-600/30">
+                      <div className="flex size-14 items-center justify-center rounded-lg bg-zinc-700/50 ring-1 ring-zinc-600/30 overflow-hidden">
                         {product?.image_url ? (
                           <img
                             src={product.image_url}
                             alt={product.name}
                             className="size-full rounded-lg object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none"
+                              e.currentTarget.nextElementSibling?.classList.remove("hidden")
+                            }}
                           />
-                        ) : (
-                          <Package className="size-6 text-zinc-500" />
-                        )}
+                        ) : null}
+                        <Package className={`size-6 text-zinc-500 ${product?.image_url ? "hidden" : ""}`} />
                       </div>
 
                       <div className="min-w-0">
