@@ -18,7 +18,7 @@ type ConnectionStatus = "idle" | "connecting" | "connected" | "error" | "reconne
 
 const EXAMPLE_PROMPTS = [
   'Track Samsung 65" TV under $900',
-  "Show me laptop deals under $1500",
+  "Show me laptop deals",
   "What am I tracking?",
 ]
 
