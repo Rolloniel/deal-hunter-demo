@@ -16,6 +16,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://deals.kliuiev.com",
         "https://dealhunter.kliuiev.com",
         "http://localhost:3000",
         "http://localhost:3001",
