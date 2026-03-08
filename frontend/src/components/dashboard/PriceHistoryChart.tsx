@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts"
-import { X, TrendingDown } from "lucide-react"
+import { X, TrendingDown, Package } from "lucide-react"
 
 interface PricePoint {
   price: number
@@ -141,12 +141,14 @@ export function PriceHistoryExpanded({
   productName,
   targetPrice,
   currentPrice,
+  imageUrl,
   onClose,
 }: {
   productId: string
   productName: string
   targetPrice: number
   currentPrice: number
+  imageUrl?: string | null
   onClose: () => void
 }) {
   const [data, setData] = useState<ChartDataPoint[]>([])
@@ -205,7 +207,22 @@ export function PriceHistoryExpanded({
       >
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-zinc-700/50 ring-1 ring-zinc-600/30 overflow-hidden">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={productName}
+                  className="size-full rounded-lg object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none"
+                    e.currentTarget.nextElementSibling?.classList.remove("hidden")
+                  }}
+                />
+              ) : null}
+              <Package className={`size-5 text-zinc-500 ${imageUrl ? "hidden" : ""}`} />
+            </div>
+            <div>
             <h3 className="text-lg font-semibold text-white">{productName}</h3>
             <div className="mt-1 flex items-center gap-3 text-sm">
               <span className="text-zinc-400">
@@ -221,6 +238,7 @@ export function PriceHistoryExpanded({
                   ${targetPrice.toFixed(2)}
                 </span>
               </span>
+            </div>
             </div>
           </div>
           <button

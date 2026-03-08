@@ -364,6 +364,7 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset, accessTok
           productName={expandedItem.products?.name || "Unknown Product"}
           targetPrice={expandedItem.target_price}
           currentPrice={expandedItem.products?.current_price || 0}
+          imageUrl={expandedItem.products?.image_url || null}
           onClose={() => setExpandedItem(null)}
         />
       )}
