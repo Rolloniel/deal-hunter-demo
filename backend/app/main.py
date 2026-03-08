@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import sqlalchemy as sa
 
 from app.routers import chat, products, alerts, analytics, demo
 from app.config import get_settings
+from app.db import engine
 
 settings = get_settings()
 
@@ -36,6 +38,18 @@ app.include_router(products.router)
 app.include_router(alerts.router)
 app.include_router(analytics.router)
 app.include_router(demo.router)
+
+
+@app.on_event("startup")
+async def startup():
+    # Verify DB connectivity
+    async with engine.connect() as conn:
+        await conn.execute(sa.text("SELECT 1"))
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await engine.dispose()
 
 
 @app.get("/health")

@@ -7,13 +7,19 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     resend_api_key: str = ""
 
-    # Supabase
-    supabase_url: str = ""
-    supabase_key: str = ""
+    # Database
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/dealhunter"
+
+    # Auth
+    jwt_secret: str = "change-me-in-production"
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
 
     # App Config
     demo_alert_email: str = "alerts@kliuiev.com"
-    frontend_url: str = "https://dealhunter.kliuiev.com"
+    frontend_url: str = "https://deals.kliuiev.com"
 
     class Config:
         env_file = "../.env"

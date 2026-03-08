@@ -1,19 +1,16 @@
-"""Supabase database client initialization."""
+"""Async database engine and session factory."""
 
-from functools import lru_cache
-
-from supabase import Client, create_client
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
 
+settings = get_settings()
 
-@lru_cache()
-def get_supabase_client() -> Client:
-    """Get a cached Supabase client instance."""
-    settings = get_settings()
-    return create_client(settings.supabase_url, settings.supabase_key)
+engine = create_async_engine(settings.database_url, echo=False)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-def get_db() -> Client:
-    """Get Supabase client (alias for get_supabase_client)."""
-    return get_supabase_client()
+async def get_session() -> AsyncSession:
+    """Yield an async database session."""
+    async with async_session() as session:
+        yield session
