@@ -32,7 +32,9 @@ Thumbs.db
 
 # Gas Town (added by gt)
 .runtime/
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 .logs/
 
 # Dolt database files (added by bd init)
