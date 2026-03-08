@@ -11,12 +11,7 @@ interface HeaderProps {
 export function Header({ onStartTour }: HeaderProps) {
   const { user, signOut } = useAuth()
 
-  const avatarUrl = user?.user_metadata?.avatar_url
-  const displayName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email?.split("@")[0] ||
-    "User"
+  const displayName = user?.email?.split("@")[0] || "User"
 
   return (
     <header className="relative border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
@@ -72,18 +67,9 @@ export function Header({ onStartTour }: HeaderProps) {
           {user && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={displayName}
-                    className="size-5 rounded-full"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="flex size-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-[10px] font-bold text-white">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <div className="flex size-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-[10px] font-bold text-white">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
                 <span className="hidden text-xs font-medium text-zinc-300 sm:inline">
                   {displayName}
                 </span>
