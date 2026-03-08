@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 import sqlalchemy as sa
 
-from app.routers import chat, products, alerts, analytics, demo
+from app.routers import chat, products, alerts, analytics, demo, auth
 from app.config import get_settings
 from app.db import engine
 
@@ -13,6 +14,9 @@ app = FastAPI(
     description="AI-powered deal tracking assistant",
     version="0.1.0",
 )
+
+# Session middleware (required by Authlib OAuth)
+app.add_middleware(SessionMiddleware, secret_key=settings.jwt_secret)
 
 # CORS configuration
 app.add_middleware(
@@ -33,6 +37,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(products.router)
 app.include_router(alerts.router)
@@ -42,7 +47,6 @@ app.include_router(demo.router)
 
 @app.on_event("startup")
 async def startup():
-    # Verify DB connectivity
     async with engine.connect() as conn:
         await conn.execute(sa.text("SELECT 1"))
 
