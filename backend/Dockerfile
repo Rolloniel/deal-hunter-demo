@@ -8,6 +8,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 COPY --from=builder /install /usr/local
+ENV PYTHONPATH=/app
 COPY app/ ./app/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
