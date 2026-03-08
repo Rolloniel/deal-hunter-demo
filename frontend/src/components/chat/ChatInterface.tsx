@@ -17,9 +17,10 @@ interface Message {
 type ConnectionStatus = "idle" | "connecting" | "connected" | "error" | "reconnecting"
 
 const EXAMPLE_PROMPTS = [
-  'Track Samsung 65" TV under $900',
-  "Show me laptop deals",
-  "What am I tracking?",
+  "Find me a good pair of headphones under $300",
+  "Show me gaming deals",
+  "Track AirPods Pro under $170",
+  "What fitness trackers do you have?",
 ]
 
 const getApiUrl = () => {

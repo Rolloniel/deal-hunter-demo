@@ -7,7 +7,9 @@ from openai import AsyncOpenAI  # type: ignore
 from app.config import get_settings
 from app.services.products import (
     search_products,
+    search_catalog,
     get_products_by_category,
+    get_product_categories,
     create_tracked_item,
     get_tracked_items,
     get_tracked_item_by_product_id,
@@ -23,22 +25,52 @@ client = AsyncOpenAI(api_key=settings.openai_api_key)
 SYSTEM_PROMPT = """You are DealHunter, a product deal tracking assistant.
 
 RULES:
-- You help users track product prices and get recommendations.
+- You help users track product prices and find deals across our product catalog.
 - You do NOT track flights or travel - politely redirect to product deals.
 - You NEVER hallucinate prices - use tools to get real data.
 - You are concise - max 2-3 sentences per response.
 - ALWAYS call the track_product tool when user mentions tracking ANY product with a price. Do NOT ask for clarification - just use the product name they gave you.
 - If user says "Track X under $Y", immediately call track_product with product_name=X and target_price=Y.
-
-Available products in our database: Samsung TV, Sony Headphones, MacBook Laptop.
+- When a user asks about products, categories, or what's available, use the search_catalog tool to find matching products.
+- We have a large catalog spanning many categories including TVs, Laptops, Headphones, Earbuds, Speakers, Tablets, Phones, Gaming, Home, Fitness, and Cameras.
 
 Available actions:
+- Search our product catalog by name, category, or price range (use search_catalog tool)
 - Track a product at a target price (use track_product tool)
 - Get product recommendations by category (use get_recommendations tool)
 - List currently tracked items (use list_tracked_items tool)"""
 
 # Tool definitions for OpenAI function calling
 TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_catalog",
+            "description": "Search the product catalog by name, category, and/or price range. Use this when users ask about available products, want to browse, or search for something specific.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search term to match against product names (e.g., 'Sony', 'MacBook', 'vacuum')",
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "Filter by category: TV, Laptop, Headphones, Earbuds, Speakers, Tablet, Phone, Gaming, Home, Fitness, Camera",
+                    },
+                    "min_price": {
+                        "type": "number",
+                        "description": "Minimum price in USD",
+                    },
+                    "max_price": {
+                        "type": "number",
+                        "description": "Maximum price in USD",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -49,7 +81,7 @@ TOOLS = [
                 "properties": {
                     "product_name": {
                         "type": "string",
-                        "description": "The name of the product to track (e.g., 'Samsung 65 inch TV', 'Sony WH-1000XM5 Headphones')",
+                        "description": "The name of the product to track (e.g., 'Sony WH-1000XM5', 'MacBook Air', 'Dyson vacuum')",
                     },
                     "target_price": {
                         "type": "number",
@@ -70,7 +102,7 @@ TOOLS = [
                 "properties": {
                     "category": {
                         "type": "string",
-                        "description": "Product category (e.g., 'TV', 'Headphones', 'Laptop', 'Electronics')",
+                        "description": "Product category (e.g., 'TV', 'Headphones', 'Laptop', 'Gaming', 'Fitness', 'Home')",
                     },
                     "max_price": {
                         "type": "number",
@@ -165,19 +197,49 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
     Connects to Supabase for actual data operations.
     """
     try:
-        if tool_name == "track_product":
+        if tool_name == "search_catalog":
+            query = tool_args.get("query")
+            category = tool_args.get("category")
+            min_price = tool_args.get("min_price")
+            max_price = tool_args.get("max_price")
+
+            if not query and not category and min_price is None and max_price is None:
+                # No filters — return categories overview
+                categories = get_product_categories()
+                return f"We have products across these categories: {', '.join(categories)}. What are you looking for?"
+
+            products = search_catalog(
+                query=query,
+                category=category,
+                min_price=min_price,
+                max_price=max_price,
+            )
+
+            if not products:
+                categories = get_product_categories()
+                return (
+                    f"No products found matching your search. "
+                    f"Try browsing by category: {', '.join(categories)}."
+                )
+
+            product_list = "\n".join(
+                [f"- {p['name']} ({p['category']}): ${p['current_price']:.2f}" for p in products]
+            )
+            return f"Found {len(products)} product(s):\n{product_list}"
+
+        elif tool_name == "track_product":
             product_name = tool_args.get("product_name")
             target_price = tool_args.get("target_price")
 
             if not product_name or not isinstance(product_name, str):
-                return "I need a product name to track. Try saying 'Track Samsung TV under $900'."
+                return "I need a product name to track. Try saying 'Track Sony headphones under $300'."
             if target_price is None or not isinstance(target_price, (int, float)) or target_price <= 0:
-                return "I need a valid target price. Try saying 'Track Samsung TV under $900'."
+                return "I need a valid target price. Try saying 'Track Sony headphones under $300'."
 
             products = search_products(product_name)
 
             if not products:
-                return f"I couldn't find a product matching '{product_name}' in our database. We currently have TVs, Headphones, and Laptops available."
+                return f"I couldn't find a product matching '{product_name}' in our catalog. Try searching with the product name or browsing by category."
 
             product = products[0]
 

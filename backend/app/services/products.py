@@ -39,8 +39,66 @@ def search_products(name: str, limit: int = 5) -> list[dict]:
     return result.data
 
 
+def search_catalog(
+    query: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    limit: int = 10,
+) -> list[dict]:
+    """Search the product catalog by name, category, and/or price range."""
+    db = get_db()
+    q = db.table("products").select("*")
+
+    if query:
+        skip_words = {"inch", "inches", "the", "a", "an", "for", "with"}
+        words = [w for w in query.split() if w.lower() not in skip_words]
+        if len(words) > 1:
+            pattern = "%" + "%".join(words) + "%"
+        else:
+            pattern = f"%{query}%"
+        q = q.ilike("name", pattern)
+
+    if category:
+        q = q.ilike("category", f"%{category}%")
+
+    if min_price is not None:
+        q = q.gte("current_price", min_price)
+
+    if max_price is not None:
+        q = q.lte("current_price", max_price)
+
+    result = q.limit(limit).execute()
+
+    # If name query returned nothing, try word-by-word fallback
+    if not result.data and query:
+        skip_words = {"inch", "inches", "the", "a", "an", "for", "with"}
+        words = [w for w in query.split() if w.lower() not in skip_words]
+        for word in words:
+            if len(word) > 2:
+                q2 = db.table("products").select("*").ilike("name", f"%{word}%")
+                if category:
+                    q2 = q2.ilike("category", f"%{category}%")
+                if min_price is not None:
+                    q2 = q2.gte("current_price", min_price)
+                if max_price is not None:
+                    q2 = q2.lte("current_price", max_price)
+                result = q2.limit(limit).execute()
+                if result.data:
+                    break
+
+    return result.data
+
+
+def get_product_categories() -> list[str]:
+    """Get all distinct product categories."""
+    db = get_db()
+    result = db.table("products").select("category").execute()
+    return sorted({p["category"] for p in result.data})
+
+
 def get_products_by_category(
-    category: str, max_price: Optional[float] = None, limit: int = 5
+    category: str, max_price: Optional[float] = None, limit: int = 10
 ) -> list[dict]:
     """Get products by category with optional max price filter."""
     db = get_db()

@@ -17,10 +17,9 @@ from app.services.llm import process_message
 
 async def test_track_product():
     """Test that tracking request triggers track_product tool."""
-    print("\n=== Test 1: Track Samsung 65 inch TV under $900 ===")
-    # Use specific product name to ensure tool is called (not clarification)
+    print("\n=== Test 1: Track Sony WH-1000XM5 under $300 ===")
     result = await process_message(
-        "Track Samsung 65 inch TV under $900", "test-session"
+        "Track Sony WH-1000XM5 under $300", "test-session"
     )
     print(f"Result: {result}")
 
@@ -32,16 +31,15 @@ async def test_track_product():
         assert tool_call["name"] == "track_product", (
             f"Expected track_product, got {tool_call['name']}"
         )
-        assert "samsung" in tool_call["arguments"]["product_name"].lower(), (
-            "Product name should contain 'samsung'"
+        assert "sony" in tool_call["arguments"]["product_name"].lower(), (
+            "Product name should contain 'sony'"
         )
-        assert tool_call["arguments"]["target_price"] == 900, (
-            f"Expected 900, got {tool_call['arguments']['target_price']}"
+        assert tool_call["arguments"]["target_price"] == 300, (
+            f"Expected 300, got {tool_call['arguments']['target_price']}"
         )
         print("PASS: track_product tool called correctly")
     else:
         print(f"Content: {result.get('content')}")
-        # If no tool call, check if it's asking for clarification
         assert "track" in result.get("content", "").lower() or result.get(
             "tool_calls"
         ), "Should either call tool or mention tracking"
@@ -95,8 +93,8 @@ async def test_list_tracked():
 
 async def test_recommendations():
     """Test get recommendations."""
-    print("\n=== Test 4: Show me headphone deals under $200 ===")
-    result = await process_message("Show me headphone deals under $200", "test-session")
+    print("\n=== Test 4: Show me gaming deals under $500 ===")
+    result = await process_message("Show me gaming deals under $500", "test-session")
     print(f"Result: {result}")
 
     if result.get("tool_calls"):
