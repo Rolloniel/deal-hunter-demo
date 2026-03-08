@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth import get_current_user
 from app.db import get_db
 
 logger = logging.getLogger(__name__)
@@ -11,20 +12,31 @@ router = APIRouter(prefix="/api/demo", tags=["demo"])
 
 
 @router.post("/reset")
-async def reset_demo():
-    """Reset demo by clearing tracked items and alerts."""
+async def reset_demo(user=Depends(get_current_user)):
+    """Reset demo by clearing this user's tracked items and alerts."""
     db = get_db()
 
     try:
-        # Delete alerts FIRST (FK child references tracked_items)
-        db.table("alerts").delete().neq(
-            "tracked_item_id", "00000000-0000-0000-0000-000000000000"
-        ).execute()
+        # Get this user's tracked item IDs
+        user_items = (
+            db.table("tracked_items")
+            .select("id")
+            .eq("user_id", user.id)
+            .execute()
+        )
+        user_item_ids = [item["id"] for item in (user_items.data or [])]
 
-        # Delete tracked_items SECOND (FK parent)
-        db.table("tracked_items").delete().neq(
-            "product_id", "00000000-0000-0000-0000-000000000000"
-        ).execute()
+        if user_item_ids:
+            # Delete alerts for this user's tracked items
+            for item_id in user_item_ids:
+                db.table("alerts").delete().eq(
+                    "tracked_item_id", item_id
+                ).execute()
+
+            # Delete this user's tracked items
+            db.table("tracked_items").delete().eq(
+                "user_id", user.id
+            ).execute()
 
         # Reset ALL product prices to original values
         products_result = (

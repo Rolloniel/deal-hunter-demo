@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Header } from "@/components/layout/Header"
 import { ChatInterface } from "@/components/chat/ChatInterface"
@@ -16,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { MessageSquare } from "lucide-react"
+import { useAuth } from "@/components/providers/AuthProvider"
 
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -28,9 +30,18 @@ const getApiUrl = () => {
 }
 
 export default function Home() {
+  const { user, session, loading } = useAuth()
+  const router = useRouter()
   const [refreshKey, setRefreshKey] = useState(0)
   const [chatResetKey, setChatResetKey] = useState(0)
   const [email, setEmail] = useState("")
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login")
+    }
+  }, [user, loading, router])
 
   // Load email from localStorage on mount
   useEffect(() => {
@@ -44,10 +55,21 @@ export default function Home() {
     localStorage.setItem("dealhunter_alert_email", newEmail)
   }
 
+  const getAuthHeaders = useCallback((): Record<string, string> => {
+    const token = session?.access_token
+    if (token) {
+      return { Authorization: `Bearer ${token}` }
+    }
+    return {}
+  }, [session])
+
   // Reset demo handler
   const handleReset = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/demo/reset`, { method: "POST" })
+      const response = await fetch(`${getApiUrl()}/api/demo/reset`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      })
       if (response.ok) {
         toast.success("Demo reset complete")
         setRefreshKey(prev => prev + 1)
@@ -65,6 +87,15 @@ export default function Home() {
     setRefreshKey((prev) => prev + 1)
   }
 
+  // Show loading while checking auth
+  if (loading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <div className="size-8 animate-spin rounded-full border-2 border-zinc-700 border-t-emerald-500" />
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
       {/* Ambient background effects */}
@@ -78,7 +109,7 @@ export default function Home() {
       <main className="relative flex-1 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl space-y-6">
           {/* Analytics Summary Cards */}
-          <AnalyticsSummary refreshKey={refreshKey} />
+          <AnalyticsSummary refreshKey={refreshKey} accessToken={session?.access_token} />
 
           <div className="grid gap-6 lg:grid-cols-2">
           {/* Chat Section */}
@@ -98,29 +129,35 @@ export default function Home() {
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col p-0">
-              <ChatInterface onMessageComplete={handleChatComplete} resetKey={chatResetKey} />
+              <ChatInterface
+                onMessageComplete={handleChatComplete}
+                resetKey={chatResetKey}
+                accessToken={session?.access_token}
+              />
             </CardContent>
           </Card>
 
           {/* Dashboard Section */}
           <div className="flex flex-col gap-6">
             {/* Tracked Items Card - Dynamic */}
-            <TrackedItems 
+            <TrackedItems
               refreshKey={refreshKey}
               email={email}
               onSimulate={handleChatComplete}
               onReset={handleReset}
+              accessToken={session?.access_token}
             />
 
 {/* Price Alerts Card - Dynamic */}
-            <PriceAlerts 
+            <PriceAlerts
               refreshKey={refreshKey}
               emailInput={
-                <EmailInput 
-                  value={email} 
+                <EmailInput
+                  value={email}
                   onChange={handleEmailChange}
                 />
               }
+              accessToken={session?.access_token}
             />
           </div>
         </div>

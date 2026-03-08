@@ -1,11 +1,24 @@
-import { Target, Zap } from "lucide-react"
+"use client"
+
+import { Target, Zap, LogOut } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/components/providers/AuthProvider"
 
 export function Header() {
+  const { user, signOut } = useAuth()
+
+  const avatarUrl = user?.user_metadata?.avatar_url
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "User"
+
   return (
     <header className="relative border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
       {/* Subtle gradient accent line at top */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
-      
+
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
@@ -27,16 +40,49 @@ export function Header() {
           </div>
         </div>
 
-        {/* Status indicator */}
-        <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
-          <div className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+        {/* User info & sign out */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
+            <div className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+            </div>
+            <span className="text-xs font-medium text-zinc-400">
+              <Zap className="mr-1 inline size-3 text-emerald-500" />
+              Tracking Active
+            </span>
           </div>
-          <span className="text-xs font-medium text-zinc-400">
-            <Zap className="mr-1 inline size-3 text-emerald-500" />
-            Tracking Active
-          </span>
+
+          {user && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="size-5 rounded-full"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="flex size-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-[10px] font-bold text-white">
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="hidden text-xs font-medium text-zinc-300 sm:inline">
+                  {displayName}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={signOut}
+                className="size-8 text-zinc-400 hover:text-white"
+                title="Sign out"
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>

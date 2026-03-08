@@ -4,8 +4,9 @@ import logging
 import random
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth import get_current_user
 from app.config import get_settings
 from app.db import get_db
 from app.models.schemas import SimulateRequest
@@ -19,7 +20,9 @@ settings = get_settings()
 
 
 @router.post("/simulate")
-async def simulate_price_drop(request: Optional[SimulateRequest] = None):
+async def simulate_price_drop(
+    request: Optional[SimulateRequest] = None, user=Depends(get_current_user)
+):
     """
     Simulate a price drop for demo purposes.
     Updates the first tracked item's product price to below target.
@@ -27,8 +30,8 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
     """
     db = get_db()
 
-    # Get tracked items
-    items = get_tracked_items()
+    # Get tracked items for this user
+    items = get_tracked_items(user_id=user.id)
 
     if not items:
         raise HTTPException(
@@ -111,17 +114,23 @@ async def simulate_price_drop(request: Optional[SimulateRequest] = None):
 
 
 @router.get("")
-async def get_alerts():
+async def get_alerts(user=Depends(get_current_user)):
     """Get all triggered alerts with product names."""
     db = get_db()
 
     try:
-        # Try nested embed query
+        # Get alerts for this user's tracked items
         result = (
             db.table("alerts")
-            .select("*, tracked_items(product_id, products(name))")
+            .select("*, tracked_items(product_id, user_id, products(name))")
             .execute()
         )
+        # Filter to only this user's alerts
+        result.data = [
+            a
+            for a in (result.data or [])
+            if a.get("tracked_items", {}).get("user_id") == user.id
+        ]
 
         alerts = []
         for alert in result.data:

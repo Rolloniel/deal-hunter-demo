@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.auth import get_current_user
 from app.db import get_db
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 
 @router.get("/summary")
-async def get_summary():
+async def get_summary(user=Depends(get_current_user)):
     """Get aggregated dashboard metrics: total items, alerts, savings, best deal."""
     db = get_db()
 
@@ -22,17 +23,26 @@ async def get_summary():
     best_deal = None
 
     try:
-        # Count tracked items
-        items_result = db.table("tracked_items").select("id", count="exact").execute()
-        total_items = items_result.count or 0
-
-        # Get alerts with price data
-        alerts_result = (
-            db.table("alerts")
-            .select("*, tracked_items(product_id, products(name))")
+        # Count tracked items for this user
+        items_result = (
+            db.table("tracked_items")
+            .select("id", count="exact")
+            .eq("user_id", user.id)
             .execute()
         )
-        alerts = alerts_result.data or []
+        total_items = items_result.count or 0
+
+        # Get alerts with price data, filtered by user
+        alerts_result = (
+            db.table("alerts")
+            .select("*, tracked_items(product_id, user_id, products(name))")
+            .execute()
+        )
+        alerts = [
+            a
+            for a in (alerts_result.data or [])
+            if a.get("tracked_items", {}).get("user_id") == user.id
+        ]
         total_alerts = len(alerts)
 
         for alert in alerts:

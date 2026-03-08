@@ -61,8 +61,8 @@ export default function LandingPage() {
             </div>
           </div>
           <Button asChild variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:border-emerald-500/50 hover:text-white">
-            <Link href="/app">
-              Launch App
+            <Link href="/login">
+              Sign In
               <ArrowRight className="size-3.5" />
             </Link>
           </Button>
@@ -98,7 +98,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-600 hover:to-teal-700">
-              <Link href="/app">
+              <Link href="/login">
                 Try the Demo
                 <ArrowRight className="size-4" />
               </Link>
@@ -209,7 +209,7 @@ export default function LandingPage() {
             Try the demo and see how DealHunter AI can save you money.
           </p>
           <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-600 hover:to-teal-700">
-            <Link href="/app">
+            <Link href="/login">
               Try the Demo
               <ArrowRight className="size-4" />
             </Link>

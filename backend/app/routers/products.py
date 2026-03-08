@@ -1,6 +1,7 @@
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth import get_current_user
 from app.services.products import (
     get_tracked_items,
     get_products_by_category,
@@ -58,9 +59,9 @@ async def list_categories():
 
 
 @router.get("/tracked")
-async def list_tracked():
+async def list_tracked(user=Depends(get_current_user)):
     try:
-        items = get_tracked_items()
+        items = get_tracked_items(user_id=user.id)
         return {"tracked_items": items}
     except Exception as e:
         error_msg = str(e)

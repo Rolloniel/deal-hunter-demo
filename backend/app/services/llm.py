@@ -191,7 +191,9 @@ async def process_message(
         }
 
 
-async def get_tool_response(tool_name: str, tool_args: dict) -> str:
+async def get_tool_response(
+    tool_name: str, tool_args: dict, user_id: str | None = None
+) -> str:
     """
     Execute a tool and return the result as a string for the LLM.
     Connects to Supabase for actual data operations.
@@ -243,14 +245,14 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
 
             product = products[0]
 
-            # Check if already tracked
-            existing = get_tracked_item_by_product_id(product["id"])
+            # Check if already tracked by this user
+            existing = get_tracked_item_by_product_id(product["id"], user_id=user_id)
             if existing:
                 update_tracked_item_target_price(existing["id"], target_price)
                 return f"Updated tracking for '{product['name']}' (currently ${product['current_price']:.2f}). New alert target: ${target_price:.2f}."
 
             tracked = create_tracked_item(
-                product_id=product["id"], target_price=target_price
+                product_id=product["id"], target_price=target_price, user_id=user_id
             )
 
             if tracked:
@@ -285,7 +287,7 @@ async def get_tool_response(tool_name: str, tool_args: dict) -> str:
             return f"Here are some {category} deals:\n{product_list}"
 
         elif tool_name == "list_tracked_items":
-            items = get_tracked_items()
+            items = get_tracked_items(user_id=user_id)
 
             if not items:
                 return "You're not tracking any products yet. Try saying 'Track [product name] under $[price]' to get started!"

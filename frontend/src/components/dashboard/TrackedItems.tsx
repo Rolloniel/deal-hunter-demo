@@ -61,9 +61,10 @@ interface TrackedItemsProps {
   email?: string
   onSimulate?: () => void
   onReset?: () => void
+  accessToken?: string
 }
 
-export function TrackedItems({ refreshKey, email, onSimulate, onReset }: TrackedItemsProps) {
+export function TrackedItems({ refreshKey, email, onSimulate, onReset, accessToken }: TrackedItemsProps) {
   const [items, setItems] = useState<TrackedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -86,7 +87,13 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
       const controller = new AbortController()
       timeoutId = setTimeout(() => controller.abort(), 15000)
 
+      const headers: Record<string, string> = {}
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`
+      }
+
       const response = await fetch(`${getApiUrl()}/api/products/tracked`, {
+        headers,
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
@@ -126,7 +133,7 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }, [])
+  }, [accessToken])
 
   useEffect(() => {
     fetchItems()
@@ -227,6 +234,7 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
               email={email}
               onSimulate={onSimulate}
               disabled={items.length === 0}
+              accessToken={accessToken}
             />
             <Button
               variant="ghost"

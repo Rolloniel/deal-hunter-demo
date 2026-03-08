@@ -110,33 +110,37 @@ def get_products_by_category(
 
 
 def create_tracked_item(
-    product_id: UUID, target_price: float, email: str = DEFAULT_EMAIL
+    product_id: UUID, target_price: float, user_id: str | None = None
 ) -> dict:
     """Create a tracked item for a product."""
     db = get_db()
+    data = {
+        "product_id": str(product_id),
+        "target_price": target_price,
+    }
+    if user_id:
+        data["user_id"] = user_id
     result = (
         db.table("tracked_items")
-        .insert(
-            {
-                "product_id": str(product_id),
-                "target_price": target_price,
-            }
-        )
+        .insert(data)
         .execute()
     )
     return result.data[0] if result.data else {}
 
 
-def get_tracked_item_by_product_id(product_id: UUID) -> Optional[dict]:
+def get_tracked_item_by_product_id(
+    product_id: UUID, user_id: str | None = None
+) -> Optional[dict]:
     """Check if a product is already being tracked."""
     db = get_db()
-    result = (
+    query = (
         db.table("tracked_items")
         .select("*")
         .eq("product_id", str(product_id))
-        .limit(1)
-        .execute()
     )
+    if user_id:
+        query = query.eq("user_id", user_id)
+    result = query.limit(1).execute()
     return result.data[0] if result.data else None
 
 
@@ -152,10 +156,13 @@ def update_tracked_item_target_price(item_id: str, target_price: float) -> dict:
     return result.data[0] if result.data else {}
 
 
-def get_tracked_items(email: str = DEFAULT_EMAIL) -> list[dict]:
+def get_tracked_items(user_id: str | None = None) -> list[dict]:
     """Get all tracked items with product details."""
     db = get_db()
-    result = db.table("tracked_items").select("*, products(*)").execute()
+    query = db.table("tracked_items").select("*, products(*)")
+    if user_id:
+        query = query.eq("user_id", user_id)
+    result = query.execute()
     return result.data
 
 

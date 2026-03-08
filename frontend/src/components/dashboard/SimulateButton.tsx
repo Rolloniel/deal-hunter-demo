@@ -19,17 +19,22 @@ interface SimulateButtonProps {
   email?: string
   onSimulate?: () => void
   disabled?: boolean
+  accessToken?: string
 }
 
-export function SimulateButton({ email, onSimulate, disabled }: SimulateButtonProps) {
+export function SimulateButton({ email, onSimulate, disabled, accessToken }: SimulateButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSimulate = async () => {
     setIsLoading(true)
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`
+      }
       const response = await fetch(`${getApiUrl()}/api/alerts/simulate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ email: email || undefined }),
       })
 
