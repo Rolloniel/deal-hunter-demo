@@ -2,14 +2,17 @@
 
 import logging
 import random
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select, update, insert
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.auth import get_current_user
 from app.config import get_settings
-from app.db import get_db
+from app.db import get_session
 from app.models.schemas import SimulateRequest
+from app.models.tables import Alert, TrackedItem, Product, PriceHistory
 from app.services.email import send_price_alert
 from app.services.products import get_tracked_items
 
@@ -21,24 +24,16 @@ settings = get_settings()
 
 @router.post("/simulate")
 async def simulate_price_drop(
-    request: Optional[SimulateRequest] = None, user=Depends(get_current_user)
+    request: SimulateRequest | None = None,
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
 ):
-    """
-    Simulate a price drop for demo purposes.
-    Updates the first tracked item's product price to below target.
-    Sends email alert to configured demo email.
-    """
-    db = get_db()
-
-    # Get tracked items for this user
-    items = get_tracked_items(user_id=user.id)
+    """Simulate a price drop for demo purposes."""
+    items = await get_tracked_items(session, user_id=user.id)
 
     if not items:
-        raise HTTPException(
-            status_code=404, detail="No tracked items found. Track a product first!"
-        )
+        raise HTTPException(status_code=404, detail="No tracked items found. Track a product first!")
 
-    # Use specified item or first one
     item = None
     if request and request.item_id:
         item = next((i for i in items if i["id"] == str(request.item_id)), None)
@@ -53,25 +48,18 @@ async def simulate_price_drop(
         raise HTTPException(status_code=400, detail="Invalid tracked item data")
 
     old_price = product.get("current_price", target_price + 100)
+    recipient_email = request.email if request and request.email else settings.demo_alert_email
 
-    # Determine recipient email
-    recipient_email = (
-        request.email if request and request.email else settings.demo_alert_email
-    )
-
-    # Calculate new price (10-50 below target)
     price_drop = random.uniform(10, 50)
     new_price = target_price - price_drop
 
     # Update product price
-    db.table("products").update({"current_price": new_price}).eq(
-        "id", product_id
-    ).execute()
+    await session.execute(
+        update(Product).where(Product.id == product_id).values(current_price=new_price)
+    )
 
     # Add to price history
-    db.table("price_history").insert(
-        {"product_id": product_id, "price": new_price}
-    ).execute()
+    session.add(PriceHistory(product_id=product_id, price=new_price))
 
     # Send email alert
     email_sent = False
@@ -80,32 +68,25 @@ async def simulate_price_drop(
         email_sent = await send_price_alert(
             to_email=recipient_email,
             product_name=product.get("name", "Unknown Product"),
-            old_price=old_price,
-            new_price=new_price,
-            target_price=target_price,
-            product_url="#",  # No real URL for POC
+            old_price=old_price, new_price=new_price, target_price=target_price,
         )
     except Exception as e:
         email_error = str(e)
         logger.error("Email send failed: %s", e)
 
     # Create alert record
-    db.table("alerts").insert(
-        {
-            "tracked_item_id": item["id"],
-            "old_price": old_price,
-            "new_price": new_price,
-            "email_sent": email_sent,
-        }
-    ).execute()
+    session.add(Alert(
+        tracked_item_id=item["id"], old_price=old_price,
+        new_price=new_price, email_sent=email_sent,
+    ))
+    await session.commit()
 
     return {
         "success": True,
         "message": f"Price dropped to ${new_price:.2f}!",
         "product_name": product.get("name", "Unknown Product"),
         "product_id": product_id,
-        "old_price": old_price,
-        "new_price": new_price,
+        "old_price": old_price, "new_price": new_price,
         "target_price": target_price,
         "email_sent": email_sent,
         "email_recipient": recipient_email,
@@ -114,43 +95,37 @@ async def simulate_price_drop(
 
 
 @router.get("")
-async def get_alerts(user=Depends(get_current_user)):
-    """Get all triggered alerts with product names."""
-    db = get_db()
-
+async def get_alerts(
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Get all triggered alerts with product names for current user."""
     try:
-        # Get alerts for this user's tracked items
-        result = (
-            db.table("alerts")
-            .select("*, tracked_items(product_id, user_id, products(name))")
-            .execute()
+        stmt = (
+            select(Alert)
+            .join(TrackedItem)
+            .join(Product, TrackedItem.product_id == Product.id)
+            .where(TrackedItem.user_id == user.id)
+            .options(selectinload(Alert.tracked_item).selectinload(TrackedItem.product))
+            .order_by(Alert.created_at.desc())
         )
-        # Filter to only this user's alerts
-        result.data = [
-            a
-            for a in (result.data or [])
-            if a.get("tracked_items", {}).get("user_id") == user.id
-        ]
+        result = await session.execute(stmt)
+        alerts_list = result.scalars().all()
 
         alerts = []
-        for alert in result.data:
+        for alert in alerts_list:
             product_name = "Unknown Product"
-            tracked_items = alert.get("tracked_items")
-            if tracked_items:
-                products = tracked_items.get("products")
-                if products:
-                    product_name = products.get("name", "Unknown Product")
+            if alert.tracked_item and alert.tracked_item.product:
+                product_name = alert.tracked_item.product.name
 
-            alerts.append(
-                {
-                    "id": alert.get("id"),
-                    "product_name": product_name,
-                    "old_price": alert.get("old_price"),
-                    "new_price": alert.get("new_price"),
-                    "email_sent": alert.get("email_sent"),
-                    "created_at": alert.get("created_at"),
-                }
-            )
+            alerts.append({
+                "id": str(alert.id),
+                "product_name": product_name,
+                "old_price": alert.old_price,
+                "new_price": alert.new_price,
+                "email_sent": alert.email_sent,
+                "created_at": alert.created_at.isoformat() if alert.created_at else None,
+            })
 
         return {"alerts": alerts}
     except Exception as e:

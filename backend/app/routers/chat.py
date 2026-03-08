@@ -4,7 +4,9 @@ import json
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
+from app.db import get_session
 from app.models.schemas import ChatMessage
 from app.services.llm import process_message, get_tool_response
 
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
-async def generate_stream(message: str, session_id: str, user_id: str):
+async def generate_stream(message: str, session_id: str, user_id: str, session: AsyncSession):
     """Generate SSE stream for chat response."""
     try:
         # Get initial response from LLM
@@ -24,7 +26,7 @@ async def generate_stream(message: str, session_id: str, user_id: str):
             for tool_call in result["tool_calls"]:
                 try:
                     tool_result = await get_tool_response(
-                        tool_call["name"], tool_call["arguments"], user_id=user_id
+                        tool_call["name"], tool_call["arguments"], user_id=user_id, session=session
                     )
                 except Exception as e:
                     logger.error("Tool execution failed for %s: %s", tool_call["name"], e)
@@ -59,7 +61,11 @@ async def generate_stream(message: str, session_id: str, user_id: str):
 
 
 @router.post("")
-async def chat(request: ChatMessage, user=Depends(get_current_user)):
+async def chat(
+    request: ChatMessage,
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
     """
     Chat endpoint with SSE streaming.
 
@@ -67,7 +73,7 @@ async def chat(request: ChatMessage, user=Depends(get_current_user)):
     Tool calls are handled internally and not exposed to the client.
     """
     return StreamingResponse(
-        generate_stream(request.message, request.session_id, user_id=user.id),
+        generate_stream(request.message, request.session_id, user_id=user.id, session=session),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -78,7 +84,11 @@ async def chat(request: ChatMessage, user=Depends(get_current_user)):
 
 
 @router.post("/sync")
-async def chat_sync(request: ChatMessage, user=Depends(get_current_user)):
+async def chat_sync(
+    request: ChatMessage,
+    user=Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
     """Non-streaming chat endpoint for testing."""
     try:
         result = await process_message(request.message, request.session_id)
@@ -88,7 +98,7 @@ async def chat_sync(request: ChatMessage, user=Depends(get_current_user)):
             for tool_call in result["tool_calls"]:
                 try:
                     tool_result = await get_tool_response(
-                        tool_call["name"], tool_call["arguments"], user_id=user.id
+                        tool_call["name"], tool_call["arguments"], user_id=user.id, session=session
                     )
                 except Exception as e:
                     logger.error("Tool execution failed in sync: %s", e)

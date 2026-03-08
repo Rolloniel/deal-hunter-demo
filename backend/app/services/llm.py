@@ -192,11 +192,11 @@ async def process_message(
 
 
 async def get_tool_response(
-    tool_name: str, tool_args: dict, user_id: str | None = None
+    tool_name: str, tool_args: dict, user_id: str | None = None, session=None
 ) -> str:
     """
     Execute a tool and return the result as a string for the LLM.
-    Connects to Supabase for actual data operations.
+    Connects to PostgreSQL via SQLAlchemy for data operations.
     """
     try:
         if tool_name == "search_catalog":
@@ -207,10 +207,11 @@ async def get_tool_response(
 
             if not query and not category and min_price is None and max_price is None:
                 # No filters — return categories overview
-                categories = get_product_categories()
+                categories = await get_product_categories(session)
                 return f"We have products across these categories: {', '.join(categories)}. What are you looking for?"
 
-            products = search_catalog(
+            products = await search_catalog(
+                session,
                 query=query,
                 category=category,
                 min_price=min_price,
@@ -218,7 +219,7 @@ async def get_tool_response(
             )
 
             if not products:
-                categories = get_product_categories()
+                categories = await get_product_categories(session)
                 return (
                     f"No products found matching your search. "
                     f"Try browsing by category: {', '.join(categories)}."
@@ -238,7 +239,7 @@ async def get_tool_response(
             if target_price is None or not isinstance(target_price, (int, float)) or target_price <= 0:
                 return "I need a valid target price. Try saying 'Track Sony headphones under $300'."
 
-            products = search_products(product_name)
+            products = await search_products(session, product_name)
 
             if not products:
                 return f"I couldn't find a product matching '{product_name}' in our catalog. Try searching with the product name or browsing by category."
@@ -246,13 +247,13 @@ async def get_tool_response(
             product = products[0]
 
             # Check if already tracked by this user
-            existing = get_tracked_item_by_product_id(product["id"], user_id=user_id)
+            existing = await get_tracked_item_by_product_id(session, product["id"], user_id=user_id)
             if existing:
-                update_tracked_item_target_price(existing["id"], target_price)
+                await update_tracked_item_target_price(session, existing["id"], target_price)
                 return f"Updated tracking for '{product['name']}' (currently ${product['current_price']:.2f}). New alert target: ${target_price:.2f}."
 
-            tracked = create_tracked_item(
-                product_id=product["id"], target_price=target_price, user_id=user_id
+            tracked = await create_tracked_item(
+                session, product_id=product["id"], target_price=target_price, user_id=user_id
             )
 
             if tracked:
@@ -272,7 +273,7 @@ async def get_tool_response(
                 except (TypeError, ValueError):
                     max_price = None
 
-            products = get_products_by_category(category, max_price)
+            products = await get_products_by_category(session, category, max_price)
 
             if not products:
                 return (
@@ -287,7 +288,7 @@ async def get_tool_response(
             return f"Here are some {category} deals:\n{product_list}"
 
         elif tool_name == "list_tracked_items":
-            items = get_tracked_items(user_id=user_id)
+            items = await get_tracked_items(session, user_id=user_id)
 
             if not items:
                 return "You're not tracking any products yet. Try saying 'Track [product name] under $[price]' to get started!"
