@@ -61,13 +61,13 @@ Pass if response contains `"healthy"`.
 ```bash
 curl -s --max-time 5 "${BACKEND_URL}/api/products/search?q=laptop"
 ```
-Pass if response is valid JSON and is an array (even if empty).
+Pass if response is valid JSON with a `products` key containing an array (even if empty).
 
 **Check 3: Categories**
 ```bash
 curl -s --max-time 5 "${BACKEND_URL}/api/products/categories"
 ```
-Pass if response is valid JSON and is a non-empty array.
+Pass if response is valid JSON with a `categories` key containing a non-empty array.
 
 #### Phase 2 — Frontend Page Checks (Playwright MCP)
 
