@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header"
 import { ChatInterface } from "@/components/chat/ChatInterface"
 import { TrackedItems } from "@/components/dashboard/TrackedItems"
 import { PriceAlerts } from "@/components/dashboard/PriceAlerts"
+import { AnalyticsSummary } from "@/components/dashboard/AnalyticsSummary"
 import { EmailInput } from "@/components/dashboard/EmailInput"
 import {
   Card,
@@ -75,7 +76,11 @@ export default function Home() {
       <Header />
 
       <main className="relative flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2">
+        <div className="mx-auto max-w-7xl space-y-6">
+          {/* Analytics Summary Cards */}
+          <AnalyticsSummary refreshKey={refreshKey} />
+
+          <div className="grid gap-6 lg:grid-cols-2">
           {/* Chat Section */}
           <Card className="flex flex-col border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
             <CardHeader className="border-b border-zinc-800/50 pb-4">
@@ -118,6 +123,7 @@ export default function Home() {
               }
             />
           </div>
+        </div>
         </div>
       </main>
     </div>

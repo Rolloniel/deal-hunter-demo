@@ -29,3 +29,8 @@ Thumbs.db
 
 # Git worktrees
 .worktrees/
+
+# Gas Town (added by gt)
+.runtime/
+.claude/
+.logs/
