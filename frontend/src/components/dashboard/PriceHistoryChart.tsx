@@ -74,6 +74,7 @@ export function PriceSparkline({
     const controller = new AbortController()
     fetch(`${getApiUrl()}/api/products/${productId}/price-history`, {
       signal: controller.signal,
+      credentials: "include",
     })
       .then((r) => r.json())
       .then((json) => {
@@ -158,7 +159,8 @@ export function PriceHistoryExpanded({
     setIsLoading(true)
     try {
       const res = await fetch(
-        `${getApiUrl()}/api/products/${productId}/price-history`
+        `${getApiUrl()}/api/products/${productId}/price-history`,
+        { credentials: "include" }
       )
       const json = await res.json()
       const points: ChartDataPoint[] = (json.price_history || []).map(
