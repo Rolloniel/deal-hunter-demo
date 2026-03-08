@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Package, TrendingDown, RefreshCw, WifiOff, RotateCcw } from "lucide-react"
 import { SimulateButton } from "./SimulateButton"
+import { PriceSparkline, PriceHistoryExpanded } from "./PriceHistoryChart"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
@@ -67,6 +68,7 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [expandedItem, setExpandedItem] = useState<TrackedItem | null>(null)
   const retryCount = useRef(0)
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const maxRetries = 3
@@ -319,19 +321,26 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <p className="text-xl font-bold tabular-nums text-white">
-                        ${product?.current_price?.toFixed(2) || "0.00"}
-                      </p>
-                      <p className="mt-0.5 flex items-center justify-end gap-1 text-sm text-zinc-400">
-                        <TrendingDown className="size-3 text-emerald-400" />
-                        <span>
-                          Alert below{" "}
-                          <span className="font-medium text-emerald-400">
-                            ${item.target_price?.toFixed(2) || "0.00"}
+                    <div className="flex items-center gap-3">
+                      <PriceSparkline
+                        productId={item.product_id}
+                        targetPrice={item.target_price}
+                        onClick={() => setExpandedItem(item)}
+                      />
+                      <div className="text-right">
+                        <p className="text-xl font-bold tabular-nums text-white">
+                          ${product?.current_price?.toFixed(2) || "0.00"}
+                        </p>
+                        <p className="mt-0.5 flex items-center justify-end gap-1 text-sm text-zinc-400">
+                          <TrendingDown className="size-3 text-emerald-400" />
+                          <span>
+                            Alert below{" "}
+                            <span className="font-medium text-emerald-400">
+                              ${item.target_price?.toFixed(2) || "0.00"}
+                            </span>
                           </span>
-                        </span>
-                      </p>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -340,6 +349,16 @@ export function TrackedItems({ refreshKey, email, onSimulate, onReset }: Tracked
           </div>
         )}
       </CardContent>
+
+      {expandedItem && (
+        <PriceHistoryExpanded
+          productId={expandedItem.product_id}
+          productName={expandedItem.products?.name || "Unknown Product"}
+          targetPrice={expandedItem.target_price}
+          currentPrice={expandedItem.products?.current_price || 0}
+          onClose={() => setExpandedItem(null)}
+        />
+      )}
     </Card>
   )
 }

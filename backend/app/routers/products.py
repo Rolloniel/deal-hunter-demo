@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 
-from app.services.products import get_tracked_items, get_products_by_category
+from app.services.products import get_tracked_items, get_products_by_category, get_price_history
 from app.db import get_db
 
 router = APIRouter(prefix="/api/products", tags=["products"])
@@ -12,6 +12,21 @@ async def list_tracked():
     try:
         items = get_tracked_items()
         return {"tracked_items": items}
+    except Exception as e:
+        error_msg = str(e)
+        if "Invalid API key" in error_msg or "401" in error_msg:
+            raise HTTPException(
+                status_code=503,
+                detail="Database connection unavailable. Please check Supabase credentials.",
+            )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{product_id}/price-history")
+async def product_price_history(product_id: str):
+    try:
+        history = get_price_history(product_id)
+        return {"price_history": history}
     except Exception as e:
         error_msg = str(e)
         if "Invalid API key" in error_msg or "401" in error_msg:

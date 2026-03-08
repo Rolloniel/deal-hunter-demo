@@ -108,3 +108,17 @@ def get_product_by_id(product_id: UUID) -> Optional[dict]:
         db.table("products").select("*").eq("id", str(product_id)).single().execute()
     )
     return result.data
+
+
+def get_price_history(product_id: UUID, limit: int = 90) -> list[dict]:
+    """Get price history for a product, ordered by date ascending."""
+    db = get_db()
+    result = (
+        db.table("price_history")
+        .select("price, created_at")
+        .eq("product_id", str(product_id))
+        .order("created_at", desc=False)
+        .limit(limit)
+        .execute()
+    )
+    return result.data
