@@ -69,6 +69,7 @@ export function SimulateButton({ email, onSimulate, disabled, accessToken }: Sim
 
   return (
     <Button
+      id="simulate-button"
       onClick={handleSimulate}
       disabled={isLoading || disabled}
       className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/20 transition-all hover:from-amber-600 hover:to-orange-700 hover:shadow-amber-500/30 disabled:opacity-50"

@@ -123,3 +123,62 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Driver.js tour popover dark theme overrides */
+.driver-popover.dealhunter-tour-popover {
+  background-color: #18181b;
+  border: 1px solid rgba(63, 63, 70, 0.5);
+  color: #e4e4e7;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-title {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-description {
+  color: #a1a1aa;
+  font-size: 14px;
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-progress-text {
+  color: #71717a;
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-prev-btn {
+  color: #a1a1aa;
+  border: 1px solid rgba(63, 63, 70, 0.5);
+  background: transparent;
+  border-radius: 8px;
+  text-shadow: none;
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-prev-btn:hover {
+  color: #ffffff;
+  border-color: rgba(63, 63, 70, 0.8);
+  background: rgba(39, 39, 42, 0.5);
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-next-btn,
+.driver-popover.dealhunter-tour-popover .driver-popover-close-btn {
+  background: linear-gradient(to right, #10b981, #14b8a6);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  text-shadow: none;
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-next-btn:hover,
+.driver-popover.dealhunter-tour-popover .driver-popover-close-btn:hover {
+  background: linear-gradient(to right, #059669, #0d9488);
+}
+
+.driver-popover.dealhunter-tour-popover .driver-popover-arrow-side-left .driver-popover-arrow,
+.driver-popover.dealhunter-tour-popover .driver-popover-arrow-side-right .driver-popover-arrow,
+.driver-popover.dealhunter-tour-popover .driver-popover-arrow-side-top .driver-popover-arrow,
+.driver-popover.dealhunter-tour-popover .driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-color: #18181b;
+}

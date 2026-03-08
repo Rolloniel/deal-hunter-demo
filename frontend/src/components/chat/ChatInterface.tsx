@@ -372,7 +372,7 @@ export function ChatInterface({ onMessageComplete, resetKey, accessToken }: Chat
       </div>
 
       {/* Input area */}
-      <div className="border-t border-zinc-800/50 bg-zinc-900/30 p-4 backdrop-blur-sm">
+      <div id="chat-input" className="border-t border-zinc-800/50 bg-zinc-900/30 p-4 backdrop-blur-sm">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             ref={inputRef}

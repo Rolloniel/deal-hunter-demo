@@ -9,6 +9,7 @@ import { TrackedItems } from "@/components/dashboard/TrackedItems"
 import { PriceAlerts } from "@/components/dashboard/PriceAlerts"
 import { AnalyticsSummary } from "@/components/dashboard/AnalyticsSummary"
 import { EmailInput } from "@/components/dashboard/EmailInput"
+import { DemoTour } from "@/components/tour/DemoTour"
 import {
   Card,
   CardContent,
@@ -35,6 +36,17 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [chatResetKey, setChatResetKey] = useState(0)
   const [email, setEmail] = useState("")
+  const [tourTrigger, setTourTrigger] = useState(false)
+
+  const handleStartTour = () => {
+    setTourTrigger(false)
+    // Use a microtask to reset then set, so the DemoTour sees a fresh true
+    setTimeout(() => setTourTrigger(true), 0)
+  }
+
+  const handleTourEnd = () => {
+    setTourTrigger(false)
+  }
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -104,7 +116,8 @@ export default function Home() {
         <div className="absolute -bottom-40 -right-40 size-80 rounded-full bg-teal-500/10 blur-[100px]" />
       </div>
 
-      <Header />
+      <Header onStartTour={handleStartTour} />
+      <DemoTour startTour={tourTrigger} onTourEnd={handleTourEnd} />
 
       <main className="relative flex-1 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl space-y-6">
