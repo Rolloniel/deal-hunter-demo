@@ -105,7 +105,7 @@ export function PriceAlerts({ refreshKey, emailInput, accessToken }: PriceAlerts
   }
 
   return (
-    <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
+    <Card id="price-alerts" className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

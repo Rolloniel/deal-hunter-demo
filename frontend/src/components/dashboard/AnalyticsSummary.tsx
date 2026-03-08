@@ -171,7 +171,7 @@ export function AnalyticsSummary({ refreshKey, accessToken }: AnalyticsSummaryPr
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div id="analytics-summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {cards.map((card) => (
         <div
           key={card.label}

@@ -1,10 +1,14 @@
 "use client"
 
-import { Target, Zap, LogOut } from "lucide-react"
+import { Target, Zap, LogOut, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/providers/AuthProvider"
 
-export function Header() {
+interface HeaderProps {
+  onStartTour?: () => void
+}
+
+export function Header({ onStartTour }: HeaderProps) {
   const { user, signOut } = useAuth()
 
   const avatarUrl = user?.user_metadata?.avatar_url
@@ -42,6 +46,18 @@ export function Header() {
 
         {/* User info & sign out */}
         <div className="flex items-center gap-3">
+          {onStartTour && (
+            <Button
+              id="tour-button"
+              variant="ghost"
+              onClick={onStartTour}
+              className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:border-emerald-500/50 hover:text-emerald-400"
+            >
+              <HelpCircle className="size-3.5" />
+              <span className="hidden sm:inline">Take a Tour</span>
+            </Button>
+          )}
+
           <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
             <div className="relative flex size-2">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
