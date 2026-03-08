@@ -70,7 +70,7 @@ def _set_auth_cookie(response: RedirectResponse, token: str) -> RedirectResponse
 @router.get("/google")
 async def google_login(request: Request):
     """Redirect to Google OAuth."""
-    redirect_uri = str(request.url_for("google_callback"))
+    redirect_uri = f"{settings.backend_url}/auth/callback/google"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
@@ -97,7 +97,7 @@ async def google_callback(request: Request, session: AsyncSession = Depends(get_
 @router.get("/github")
 async def github_login(request: Request):
     """Redirect to GitHub OAuth."""
-    redirect_uri = str(request.url_for("github_callback"))
+    redirect_uri = f"{settings.backend_url}/auth/callback/github"
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
 

@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # App Config
     demo_alert_email: str = "alerts@kliuiev.com"
     frontend_url: str = "https://deals.kliuiev.com"
+    backend_url: str = "https://api-deals.kliuiev.com"
 
     class Config:
         env_file = "../.env"
