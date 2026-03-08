@@ -20,9 +20,10 @@ AI-powered deal tracking assistant. Full-stack: FastAPI backend + Next.js fronte
 ## Environment Variables
 
 See `.env.example`. Required in Coolify for backend:
+- `DATABASE_URL` — PostgreSQL connection string (asyncpg)
 - `OPENAI_API_KEY` — OpenAI API access
-- `SUPABASE_URL`, `SUPABASE_KEY` — Supabase database
 - `RESEND_API_KEY` — Email sending
+- `JWT_SECRET` — Secret for signing auth tokens
 
 Frontend build arg (set in Coolify):
 - `NEXT_PUBLIC_API_URL=https://api-deals.kliuiev.com`

@@ -14,10 +14,10 @@ AI-powered conversational deal and price tracking agent. Built as a POC for demo
 
 - **Frontend**: Next.js 16, React 19, Tailwind CSS 4, shadcn/ui
 - **Backend**: FastAPI, Python 3.12
-- **Database**: Supabase (PostgreSQL)
+- **Database**: PostgreSQL (self-hosted via Coolify)
 - **AI**: OpenAI GPT-4o-mini with function calling
 - **Email**: Resend
-- **Deployment**: Vercel (frontend), Railway (backend)
+- **Deployment**: Coolify (self-hosted PaaS)
 
 ## Project Structure
 
@@ -41,58 +41,35 @@ deal-hunter/
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.10+
-- Supabase account
+- Docker & Docker Compose
 - OpenAI API key
-- Resend API key
+- Resend API key (for email alerts)
 
-### Backend Setup
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
-
-# Create .env file with:
-# OPENAI_API_KEY=sk-...
-# SUPABASE_URL=https://xxx.supabase.co
-# SUPABASE_KEY=eyJ...
-# RESEND_API_KEY=re_...
-
-uvicorn app.main:app --reload --port 8000
-```
-
-### Frontend Setup
+### Quick Start
 
 ```bash
-cd frontend
-npm install
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your API keys
 
-# Create .env.local with:
-# NEXT_PUBLIC_API_URL=http://localhost:8000
-
-npm run dev
+# Start all services (PostgreSQL, backend, frontend)
+docker compose up
 ```
+
+Backend at http://localhost:8000, frontend at http://localhost:3000.
 
 ## Environment Variables
 
-### Backend (.env)
+See `.env.example` for all variables. Key ones:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
 | `OPENAI_API_KEY` | OpenAI API key for GPT-4o-mini | Yes |
-| `SUPABASE_URL` | Supabase project URL | Yes |
-| `SUPABASE_KEY` | Supabase anon/public key | Yes |
 | `RESEND_API_KEY` | Resend API key for emails | Yes |
-| `DEMO_ALERT_EMAIL` | Email for demo alerts | No (default: alerts@kliuiev.com) |
-
-### Frontend (.env.local)
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | Yes |
+| `JWT_SECRET` | Secret for signing auth tokens | Yes |
+| `FRONTEND_URL` | Frontend URL for CORS | No (default: http://localhost:3000) |
+| `NEXT_PUBLIC_API_URL` | Backend API URL (frontend build arg) | No (default: http://localhost:8000) |
 
 ## API Endpoints
 
