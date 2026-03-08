@@ -36,7 +36,6 @@ const getApiUrl = () => {
 interface ChatInterfaceProps {
   onMessageComplete?: () => void
   resetKey?: number
-  accessToken?: string
 }
 
 // Connection status indicator component
@@ -76,7 +75,7 @@ function ConnectionIndicator({ status }: { status: ConnectionStatus }) {
   )
 }
 
-export function ChatInterface({ onMessageComplete, resetKey, accessToken }: ChatInterfaceProps) {
+export function ChatInterface({ onMessageComplete, resetKey }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -146,14 +145,10 @@ export function ChatInterface({ onMessageComplete, resetKey, accessToken }: Chat
       abortControllerRef.current = controller
       const timeoutId = setTimeout(() => controller.abort(), 30000)
 
-      const headers: Record<string, string> = { "Content-Type": "application/json" }
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`
-      }
-
       const response = await fetch(`${getApiUrl()}/api/chat`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           message: userMessage.content,
           session_id: "demo-session",

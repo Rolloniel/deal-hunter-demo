@@ -96,20 +96,17 @@ function SummaryCardSkeleton() {
 
 interface AnalyticsSummaryProps {
   refreshKey?: number
-  accessToken?: string
 }
 
-export function AnalyticsSummary({ refreshKey, accessToken }: AnalyticsSummaryProps) {
+export function AnalyticsSummary({ refreshKey }: AnalyticsSummaryProps) {
   const [data, setData] = useState<SummaryData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchSummary = useCallback(async () => {
     try {
-      const headers: Record<string, string> = {}
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`
-      }
-      const response = await fetch(`${getApiUrl()}/api/analytics/summary`, { headers })
+      const response = await fetch(`${getApiUrl()}/api/analytics/summary`, {
+        credentials: "include",
+      })
       if (!response.ok) return
       const result = await response.json()
       setData(result)
@@ -118,7 +115,7 @@ export function AnalyticsSummary({ refreshKey, accessToken }: AnalyticsSummaryPr
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken])
+  }, [])
 
   useEffect(() => {
     fetchSummary()

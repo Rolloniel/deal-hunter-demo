@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Header } from "@/components/layout/Header"
@@ -31,7 +31,7 @@ const getApiUrl = () => {
 }
 
 export default function Home() {
-  const { user, session, loading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
   const [refreshKey, setRefreshKey] = useState(0)
   const [chatResetKey, setChatResetKey] = useState(0)
@@ -67,20 +67,12 @@ export default function Home() {
     localStorage.setItem("dealhunter_alert_email", newEmail)
   }
 
-  const getAuthHeaders = useCallback((): Record<string, string> => {
-    const token = session?.access_token
-    if (token) {
-      return { Authorization: `Bearer ${token}` }
-    }
-    return {}
-  }, [session])
-
   // Reset demo handler
   const handleReset = async () => {
     try {
       const response = await fetch(`${getApiUrl()}/api/demo/reset`, {
         method: "POST",
-        headers: getAuthHeaders(),
+        credentials: "include",
       })
       if (response.ok) {
         toast.success("Demo reset complete")
@@ -122,7 +114,7 @@ export default function Home() {
       <main className="relative flex-1 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl space-y-6">
           {/* Analytics Summary Cards */}
-          <AnalyticsSummary refreshKey={refreshKey} accessToken={session?.access_token} />
+          <AnalyticsSummary refreshKey={refreshKey} />
 
           <div className="grid gap-6 lg:grid-cols-2">
           {/* Chat Section */}
@@ -145,7 +137,6 @@ export default function Home() {
               <ChatInterface
                 onMessageComplete={handleChatComplete}
                 resetKey={chatResetKey}
-                accessToken={session?.access_token}
               />
             </CardContent>
           </Card>
@@ -158,7 +149,6 @@ export default function Home() {
               email={email}
               onSimulate={handleChatComplete}
               onReset={handleReset}
-              accessToken={session?.access_token}
             />
 
 {/* Price Alerts Card - Dynamic */}
@@ -170,7 +160,6 @@ export default function Home() {
                   onChange={handleEmailChange}
                 />
               }
-              accessToken={session?.access_token}
             />
           </div>
         </div>

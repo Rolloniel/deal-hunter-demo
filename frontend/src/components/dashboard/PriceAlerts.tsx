@@ -27,10 +27,9 @@ const getApiUrl = () => {
 interface PriceAlertsProps {
   refreshKey?: number
   emailInput?: React.ReactNode
-  accessToken?: string
 }
 
-export function PriceAlerts({ refreshKey, emailInput, accessToken }: PriceAlertsProps) {
+export function PriceAlerts({ refreshKey, emailInput }: PriceAlertsProps) {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -39,11 +38,9 @@ export function PriceAlerts({ refreshKey, emailInput, accessToken }: PriceAlerts
     setIsLoading(true)
     setHasError(false)
     try {
-      const headers: Record<string, string> = {}
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`
-      }
-      const response = await fetch(`${getApiUrl()}/api/alerts`, { headers })
+      const response = await fetch(`${getApiUrl()}/api/alerts`, {
+        credentials: "include",
+      })
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`)
       }
@@ -55,7 +52,7 @@ export function PriceAlerts({ refreshKey, emailInput, accessToken }: PriceAlerts
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken])
+  }, [])
 
   useEffect(() => {
     fetchAlerts()
